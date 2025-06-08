@@ -18,13 +18,13 @@ import io.flutter.plugins.videoplayer.platformview.PlatformVideoViewFactory;
 import io.flutter.plugins.videoplayer.platformview.PlatformViewVideoPlayer;
 import io.flutter.plugins.videoplayer.texture.TextureVideoPlayer;
 import io.flutter.view.TextureRegistry;
+import android.util.Log;
 
 /** Android platform implementation of the VideoPlayerPlugin. */
 public class VideoPlayerPlugin implements FlutterPlugin, AndroidVideoPlayerApi {
   private static final String TAG = "VideoPlayerPlugin";
   private final LongSparseArray<VideoPlayer> videoPlayers = new LongSparseArray<>();
   private FlutterState flutterState;
-  private final VideoPlayerOptions options = new VideoPlayerOptions();
 
   // TODO(stuartmorgan): Decouple identifiers for platform views and texture views.
   /**
@@ -121,27 +121,44 @@ public class VideoPlayerPlugin implements FlutterPlugin, AndroidVideoPlayerApi {
 
     long id;
     VideoPlayer videoPlayer;
+    // Build Java-side options from the incoming Pigeon message:
+VideoPlayerOptions options = new VideoPlayerOptions(
+    arg.getMixWithOthers(),                     // boolean mixWithOthers
+    arg.getMinBufferMs(),                       // int minBufferMs
+    arg.getMaxBufferMs(),                       // int maxBufferMs
+    arg.getBufferForPlaybackMs(),               // int bufferForPlaybackMs
+    arg.getBufferForPlaybackAfterRebufferMs()   // int bufferForPlaybackAfterRebufferMs
+);
     if (arg.getViewType() == Messages.PlatformVideoViewType.PLATFORM_VIEW) {
-      id = nextPlatformViewPlayerId--;
-      videoPlayer =
-          PlatformViewVideoPlayer.create(
-              flutterState.applicationContext,
-              VideoPlayerEventCallbacks.bindTo(createEventChannel(id)),
-              videoAsset,
-              options);
-    } else {
-      TextureRegistry.SurfaceProducer handle = flutterState.textureRegistry.createSurfaceProducer();
-      id = handle.id();
-      videoPlayer =
-          TextureVideoPlayer.create(
-              flutterState.applicationContext,
-              VideoPlayerEventCallbacks.bindTo(createEventChannel(id)),
-              handle,
-              videoAsset,
-              options);
-    }
+  videoPlayer =
+      PlatformViewVideoPlayer.create(
+          flutterState.applicationContext,
+          VideoPlayerEventCallbacks.bindTo(createEventChannel(id)),
+          videoAsset,
+          options           // ← here
+      );
+} else {
+  TextureRegistry.SurfaceProducer handle = flutterState.textureRegistry.createSurfaceProducer();
+  id = handle.id();
+  videoPlayer =
+      TextureVideoPlayer.create(
+          flutterState.applicationContext,
+          VideoPlayerEventCallbacks.bindTo(createEventChannel(id)),
+          handle,
+          videoAsset,
+          options           // ← and here
+      );
+}
 
     videoPlayers.put(id, videoPlayer);
+    // inside your lambda, right after building loadControl:
+Log.i(
+  "VideoPlayerPlugin",
+  "Using buffers: min=" + options.minBufferMs
+    + " max=" + options.maxBufferMs
+    + " start=" + options.bufferForPlaybackMs
+    + " rebuffer=" + options.bufferForPlaybackAfterRebufferMs
+);
     return id;
   }
 
@@ -216,11 +233,6 @@ public class VideoPlayerPlugin implements FlutterPlugin, AndroidVideoPlayerApi {
   public void pause(@NonNull Long playerId) {
     VideoPlayer player = getPlayer(playerId);
     player.pause();
-  }
-
-  @Override
-  public void setMixWithOthers(@NonNull Boolean mixWithOthers) {
-    options.mixWithOthers = mixWithOthers;
   }
 
   private interface KeyForAssetFn {

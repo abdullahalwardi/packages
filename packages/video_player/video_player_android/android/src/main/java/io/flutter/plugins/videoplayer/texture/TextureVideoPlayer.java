@@ -18,6 +18,8 @@ import io.flutter.plugins.videoplayer.VideoPlayer;
 import io.flutter.plugins.videoplayer.VideoPlayerCallbacks;
 import io.flutter.plugins.videoplayer.VideoPlayerOptions;
 import io.flutter.view.TextureRegistry.SurfaceProducer;
+import androidx.media3.exoplayer.DefaultLoadControl;
+
 
 /**
  * A subclass of {@link VideoPlayer} that adds functionality related to texture view as a way of
@@ -41,23 +43,36 @@ public final class TextureVideoPlayer extends VideoPlayer implements SurfaceProd
    */
   @NonNull
   public static TextureVideoPlayer create(
-      @NonNull Context context,
-      @NonNull VideoPlayerCallbacks events,
-      @NonNull SurfaceProducer surfaceProducer,
-      @NonNull VideoAsset asset,
-      @NonNull VideoPlayerOptions options) {
-    return new TextureVideoPlayer(
-        events,
-        surfaceProducer,
-        asset.getMediaItem(),
-        options,
-        () -> {
-          ExoPlayer.Builder builder =
-              new ExoPlayer.Builder(context)
-                  .setMediaSourceFactory(asset.getMediaSourceFactory(context));
-          return builder.build();
-        });
-  }
+    @NonNull Context context,
+    @NonNull VideoPlayerCallbacks events,
+    @NonNull SurfaceProducer surfaceProducer,
+    @NonNull VideoAsset asset,
+    @NonNull VideoPlayerOptions options) {
+  return new TextureVideoPlayer(
+      events,
+      surfaceProducer,
+      asset.getMediaItem(),
+      options,
+      () -> {
+        // ← here's where we inject buffering control
+        DefaultLoadControl loadControl = new DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                options.minBufferMs,
+                options.maxBufferMs,
+                options.bufferForPlaybackMs,
+                options.bufferForPlaybackAfterRebufferMs
+            )
+            .build();
+
+        ExoPlayer.Builder builder =
+            new ExoPlayer.Builder(context)
+                .setMediaSourceFactory(asset.getMediaSourceFactory(context))
+                .setLoadControl(loadControl);
+
+        return builder.build();
+      });
+}
+
 
   @VisibleForTesting
   public TextureVideoPlayer(

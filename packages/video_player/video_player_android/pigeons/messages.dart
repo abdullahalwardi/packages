@@ -24,6 +24,28 @@ class PlatformVideoViewCreationParams {
   final int playerId;
 }
 
+/// Additional buffering and playback options for Android/iOS players.
+class VideoPlayerOptions {
+  /// mix audio with other sources? (old default = false)
+  bool? mixWithOthers;
+
+  /// keep playing when app is backgrounded? (default = false)
+  bool? allowBackgroundPlayback;
+
+  /// min buffer in ms before playback starts
+  int? minBufferMs;
+
+  /// max buffer in ms to retain
+  int? maxBufferMs;
+
+  /// buffer in ms required to start playback
+  int? bufferForPlaybackMs;
+
+  /// buffer in ms required after a rebuffer event
+  int? bufferForPlaybackAfterRebufferMs;
+}
+
+
 class CreateMessage {
   CreateMessage({required this.httpHeaders});
   String? asset;
@@ -32,6 +54,7 @@ class CreateMessage {
   String? formatHint;
   Map<String, String> httpHeaders;
   PlatformVideoViewType? viewType;
+  VideoPlayerOptions? options;
 }
 
 @HostApi(dartHostTestHandler: 'TestHostVideoPlayerApi')
