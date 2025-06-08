@@ -14,9 +14,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// updates frames, and handles display link callbacks.
 /// If you need to display a video using platform view, use FVPVideoPlayer instead.
 @interface FVPTextureBasedVideoPlayer : FVPVideoPlayer <FlutterTexture>
-/// Initializes a new instance of FVPTextureBasedVideoPlayer with the given URL, frame updater,
-/// display link, HTTP headers, AV factory, and registrar.
+
+/// ← New: store the Pigeon-generated buffer settings
+@property(nonatomic, strong, nullable) FVPVideoPlayerOptions *bufferOptions;
+
+/// Initializes a new instance of FVPTextureBasedVideoPlayer with the given URL,
+/// buffer options, frame updater, display link, HTTP headers, AV factory, and registrar.
 - (instancetype)initWithURL:(NSURL *)url
+             bufferOptions:(nullable FVPVideoPlayerOptions *)bufferOptions
                frameUpdater:(FVPFrameUpdater *)frameUpdater
                 displayLink:(FVPDisplayLink *)displayLink
                 httpHeaders:(nonnull NSDictionary<NSString *, NSString *> *)headers
@@ -24,9 +29,10 @@ NS_ASSUME_NONNULL_BEGIN
                   registrar:(NSObject<FlutterPluginRegistrar> *)registrar
                  onDisposed:(void (^)(int64_t))onDisposed;
 
-/// Initializes a new instance of FVPTextureBasedVideoPlayer with the given asset, frame updater,
-/// display link, AV factory, and registrar.
+/// Initializes a new instance of FVPTextureBasedVideoPlayer with the given asset,
+/// buffer options, frame updater, display link, AV factory, and registrar.
 - (instancetype)initWithAsset:(NSString *)asset
+               bufferOptions:(nullable FVPVideoPlayerOptions *)bufferOptions
                  frameUpdater:(FVPFrameUpdater *)frameUpdater
                   displayLink:(FVPDisplayLink *)displayLink
                     avFactory:(id<FVPAVFactory>)avFactory
@@ -40,6 +46,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// Tells the player to run its frame updater until it receives a frame, regardless of the
 /// play/pause state.
 - (void)expectFrame;
+
 @end
 
 NS_ASSUME_NONNULL_END

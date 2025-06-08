@@ -18,12 +18,33 @@ import 'package:pigeon/pigeon.dart';
   copyrightHeader: 'pigeons/copyright.txt',
 ))
 
+
 /// Pigeon equivalent of VideoViewType.
 enum PlatformVideoViewType {
   textureView,
   platformView,
 }
 
+/// Options for buffering and playback behavior.
+class VideoPlayerOptions {
+  /// Mix audio with other sources? (default = false)
+  bool? mixWithOthers;
+
+  /// Keep playing when app is backgrounded? (default = false)
+  bool? allowBackgroundPlayback;
+
+  /// Minimum buffer in ms before playback starts.
+  int? minBufferMs;
+
+  /// Maximum buffer in ms to retain.
+  int? maxBufferMs;
+
+  /// Buffer in ms required to start playback.
+  int? bufferForPlaybackMs;
+
+  /// Buffer in ms required after a rebuffer event.
+  int? bufferForPlaybackAfterRebufferMs;
+}
 /// Information passed to the platform view creation.
 class PlatformVideoViewCreationParams {
   const PlatformVideoViewCreationParams({
@@ -45,6 +66,7 @@ class CreationOptions {
   String? formatHint;
   Map<String, String> httpHeaders;
   PlatformVideoViewType viewType;
+  VideoPlayerOptions? options;
 }
 
 @HostApi(dartHostTestHandler: 'TestHostVideoPlayerApi')

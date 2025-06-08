@@ -35,48 +35,52 @@
 
 @implementation FVPTextureBasedVideoPlayer
 - (instancetype)initWithAsset:(NSString *)asset
+               bufferOptions:(nullable FVPVideoPlayerOptions*)bufferOptions
                  frameUpdater:(FVPFrameUpdater *)frameUpdater
                   displayLink:(FVPDisplayLink *)displayLink
-                    avFactory:(id<FVPAVFactory>)avFactory
-                    registrar:(NSObject<FlutterPluginRegistrar> *)registrar
-                   onDisposed:(void (^)(int64_t))onDisposed {
-  return [self initWithURL:[NSURL fileURLWithPath:[FVPVideoPlayer absolutePathForAssetName:asset]]
-              frameUpdater:frameUpdater
-               displayLink:displayLink
-               httpHeaders:@{}
-                 avFactory:avFactory
-                 registrar:registrar
-                onDisposed:onDisposed];
+                   httpHeaders:(NSDictionary<NSString*,NSString*>*)headers
+                     avFactory:(id<FVPAVFactory>)avFactory
+                     registrar:(NSObject<FlutterPluginRegistrar>*)registrar
+                    onDisposed:(void (^)(int64_t))onDisposed {
+  NSURL *url =
+    [NSURL fileURLWithPath:[FVPVideoPlayer absolutePathForAssetName:asset]];
+  return [self initWithURL:url
+             bufferOptions:bufferOptions
+               frameUpdater:frameUpdater
+                displayLink:displayLink
+                httpHeaders:headers
+                  avFactory:avFactory
+                  registrar:registrar
+                 onDisposed:onDisposed];
 }
 
 - (instancetype)initWithURL:(NSURL *)url
+             bufferOptions:(nullable FVPVideoPlayerOptions*)bufferOptions
                frameUpdater:(FVPFrameUpdater *)frameUpdater
                 displayLink:(FVPDisplayLink *)displayLink
-                httpHeaders:(nonnull NSDictionary<NSString *, NSString *> *)headers
+                httpHeaders:(NSDictionary<NSString*,NSString*>*)headers
                   avFactory:(id<FVPAVFactory>)avFactory
-                  registrar:(NSObject<FlutterPluginRegistrar> *)registrar
+                  registrar:(NSObject<FlutterPluginRegistrar>*)registrar
                  onDisposed:(void (^)(int64_t))onDisposed {
-  NSDictionary<NSString *, id> *options = nil;
-  if ([headers count] != 0) {
-    options = @{@"AVURLAssetHTTPHeaderFieldsKey" : headers};
-  }
-  AVURLAsset *urlAsset = [AVURLAsset URLAssetWithURL:url options:options];
+  NSDictionary *opts = headers.count
+    ? @{ AVURLAssetHTTPHeaderFieldsKey: headers }
+    : nil;
+  AVURLAsset *urlAsset = [AVURLAsset URLAssetWithURL:url options:opts];
   AVPlayerItem *item = [AVPlayerItem playerItemWithAsset:urlAsset];
   return [self initWithPlayerItem:item
-                     frameUpdater:frameUpdater
-                      displayLink:displayLink
-                        avFactory:avFactory
-                        registrar:registrar
-                       onDisposed:onDisposed];
+                      bufferOptions:bufferOptions
+                          avFactory:avFactory
+                          registrar:registrar];
 }
 
 - (instancetype)initWithPlayerItem:(AVPlayerItem *)item
-                      frameUpdater:(FVPFrameUpdater *)frameUpdater
-                       displayLink:(FVPDisplayLink *)displayLink
-                         avFactory:(id<FVPAVFactory>)avFactory
-                         registrar:(NSObject<FlutterPluginRegistrar> *)registrar
-                        onDisposed:(void (^)(int64_t))onDisposed {
-  self = [super initWithPlayerItem:item avFactory:avFactory registrar:registrar];
+                   bufferOptions:(nullable FVPVideoPlayerOptions*)bufferOptions
+                        avFactory:(id<FVPAVFactory>)avFactory
+                        registrar:(NSObject<FlutterPluginRegistrar>*)registrar {
+  self = [super initWithPlayerItem:item
+                     bufferOptions:bufferOptions
+                          avFactory:avFactory
+                          registrar:registrar];
 
   if (self) {
     _frameUpdater = frameUpdater;

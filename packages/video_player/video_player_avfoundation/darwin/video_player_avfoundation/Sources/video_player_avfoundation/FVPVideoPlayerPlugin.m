@@ -175,8 +175,9 @@ static void upgradeAudioSessionCategory(AVAudioSessionCategory requestedCategory
   BOOL textureBased = options.viewType == FVPPlatformVideoViewTypeTextureView;
 
   @try {
-    FVPVideoPlayer *player = textureBased ? [self texturePlayerWithOptions:options]
-                                          : [self platformViewPlayerWithOptions:options];
+     FVPVideoPlayer *player = textureBased
+     ? [self texturePlayerWithOptions:options bufferOptions:options.options]
+     : [self platformViewPlayerWithOptions:options bufferOptions:options.options];
 
     if (player == nil) {
       *error = [FlutterError errorWithCode:@"video_player" message:@"not implemented" details:nil];
@@ -190,8 +191,8 @@ static void upgradeAudioSessionCategory(AVAudioSessionCategory requestedCategory
   }
 }
 
-- (nullable FVPTextureBasedVideoPlayer *)texturePlayerWithOptions:
-    (nonnull FVPCreationOptions *)options {
+- (nullable FVPTextureBasedVideoPlayer *)texturePlayerWithOptions:(nonnull FVPCreationOptions *)options
+                                                bufferOptions:(nullable FVPVideoPlayerOptions *)bufferOptions {
   FVPFrameUpdater *frameUpdater = [[FVPFrameUpdater alloc] initWithRegistry:_registry];
   FVPDisplayLink *displayLink =
       [self.displayLinkFactory displayLinkWithRegistrar:_registrar
@@ -206,37 +207,42 @@ static void upgradeAudioSessionCategory(AVAudioSessionCategory requestedCategory
 
   if (options.asset) {
     NSString *assetPath = [self assetPathFromCreationOptions:options];
-    return [[FVPTextureBasedVideoPlayer alloc] initWithAsset:assetPath
-                                                frameUpdater:frameUpdater
-                                                 displayLink:displayLink
-                                                   avFactory:_avFactory
-                                                   registrar:self.registrar
-                                                  onDisposed:onDisposed];
+     return [[FVPTextureBasedVideoPlayer alloc] initWithAsset:assetPath
+                                                  bufferOptions:bufferOptions
+                                             frameUpdater:frameUpdater
+                                              displayLink:displayLink
+                                                avFactory:_avFactory
+                                                registrar:self.registrar
+                                               onDisposed:onDisposed];
   } else if (options.uri) {
     return [[FVPTextureBasedVideoPlayer alloc] initWithURL:[NSURL URLWithString:options.uri]
-                                              frameUpdater:frameUpdater
-                                               displayLink:displayLink
-                                               httpHeaders:options.httpHeaders
-                                                 avFactory:_avFactory
-                                                 registrar:self.registrar
-                                                onDisposed:onDisposed];
+                                              bufferOptions:bufferOptions
+                                               frameUpdater:frameUpdater
+                                                displayLink:displayLink
+                                                httpHeaders:options.httpHeaders
+                                                  avFactory:_avFactory
+                                                  registrar:self.registrar
+                                                 onDisposed:onDisposed];
   }
 
   return nil;
 }
 
-- (nullable FVPVideoPlayer *)platformViewPlayerWithOptions:(nonnull FVPCreationOptions *)options {
+- (nullable FVPVideoPlayer *)platformViewPlayerWithOptions:(nonnull FVPCreationOptions *)options
+                                           bufferOptions:(nullable FVPVideoPlayerOptions *)bufferOptions {
   // FVPVideoPlayer contains all required logic for platform views.
   if (options.asset) {
     NSString *assetPath = [self assetPathFromCreationOptions:options];
-    return [[FVPVideoPlayer alloc] initWithAsset:assetPath
+     return [[FVPVideoPlayer alloc] initWithAsset:assetPath
+                                   bufferOptions:bufferOptions
+                                      avFactory:_avFactory
+                                      registrar:self.registrar];
+  } else if (options.uri) {
+     return [[FVPVideoPlayer alloc] initWithURL:[NSURL URLWithString:options.uri]
+                                  bufferOptions:bufferOptions
+                                     httpHeaders:options.httpHeaders
                                        avFactory:_avFactory
                                        registrar:self.registrar];
-  } else if (options.uri) {
-    return [[FVPVideoPlayer alloc] initWithURL:[NSURL URLWithString:options.uri]
-                                   httpHeaders:options.httpHeaders
-                                     avFactory:_avFactory
-                                     registrar:self.registrar];
   }
 
   return nil;

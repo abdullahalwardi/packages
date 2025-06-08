@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import "./include/video_player_avfoundation/FVPVideoPlayer.h"
+#import "./include/video_player_avfoundation/messages.g.h"
 #import "./include/video_player_avfoundation/FVPVideoPlayer_Internal.h"
 #import "./include/video_player_avfoundation/FVPVideoPlayer_Test.h"
 
@@ -19,30 +20,36 @@ static void *rateContext = &rateContext;
 
 @implementation FVPVideoPlayer
 - (instancetype)initWithAsset:(NSString *)asset
+               bufferOptions:(nullable FVPVideoPlayerOptions *)bufferOptions
                     avFactory:(id<FVPAVFactory>)avFactory
                     registrar:(NSObject<FlutterPluginRegistrar> *)registrar {
-  return [self initWithURL:[NSURL fileURLWithPath:[FVPVideoPlayer absolutePathForAssetName:asset]]
-               httpHeaders:@{}
-                 avFactory:avFactory
-                 registrar:registrar];
+  NSString *path = [FVPVideoPlayer absolutePathForAssetName:asset];
+  NSURL *url = [NSURL fileURLWithPath:path];
+  return [self initWithURL:url
+             bufferOptions:bufferOptions
+                httpHeaders:@{}
+                  avFactory:avFactory
+                  registrar:registrar];
 }
 
 - (instancetype)initWithURL:(NSURL *)url
-                httpHeaders:(nonnull NSDictionary<NSString *, NSString *> *)headers
+             bufferOptions:(nullable FVPVideoPlayerOptions *)bufferOptions
+                httpHeaders:(NSDictionary<NSString *,NSString *> *)headers
                   avFactory:(id<FVPAVFactory>)avFactory
                   registrar:(NSObject<FlutterPluginRegistrar> *)registrar {
-  NSDictionary<NSString *, id> *options = nil;
-  if ([headers count] != 0) {
-    options = @{@"AVURLAssetHTTPHeaderFieldsKey" : headers};
-  }
-  AVURLAsset *urlAsset = [AVURLAsset URLAssetWithURL:url options:options];
+  NSDictionary *optionsDict = headers.count ? @{ @"AVURLAssetHTTPHeaderFieldsKey": headers } : nil;
+  AVURLAsset *urlAsset = [AVURLAsset URLAssetWithURL:url options:optionsDict];
   AVPlayerItem *item = [AVPlayerItem playerItemWithAsset:urlAsset];
-  return [self initWithPlayerItem:item avFactory:avFactory registrar:registrar];
+  return [self initWithPlayerItem:item
+                   bufferOptions:bufferOptions
+                        avFactory:avFactory
+                        registrar:registrar];
 }
 
 - (instancetype)initWithPlayerItem:(AVPlayerItem *)item
-                         avFactory:(id<FVPAVFactory>)avFactory
-                         registrar:(NSObject<FlutterPluginRegistrar> *)registrar {
+                   bufferOptions:(nullable FVPVideoPlayerOptions *)bufferOptions
+                        avFactory:(id<FVPAVFactory>)avFactory
+                        registrar:(NSObject<FlutterPluginRegistrar> *)registrar {
   self = [super init];
   NSAssert(self, @"super init cannot be nil");
 
@@ -81,8 +88,19 @@ static void *rateContext = &rateContext;
     }
   };
 
+  _bufferOptions = bufferOptions;  // store it
+
   _player = [avFactory playerWithPlayerItem:item];
   _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
+
+  if (_bufferOptions.maxBufferMs != nil) {
+    // AVPlayerItem expects seconds
+    NSTimeInterval maxSec = _bufferOptions.maxBufferMs.doubleValue / 1000.0;
+    item.preferredForwardBufferDuration = maxSec;
+  }
+  if (_bufferOptions.allowBackgroundPlayback.boolValue) {
+    item.canUseNetworkResourcesForLiveStreamingWhilePaused = YES;
+  }
 
   // Configure output.
   NSDictionary *pixBuffAttributes = @{
