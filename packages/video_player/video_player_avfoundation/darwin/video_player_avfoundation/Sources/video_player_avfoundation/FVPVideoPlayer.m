@@ -50,7 +50,7 @@ static void *rateContext = &rateContext;
 
   // Configure buffering parameters
   item.canUseNetworkResourcesForLiveStreamingWhilePaused = false;
-  item.preferredForwardBufferDuration = 1.0;
+  item.preferredForwardBufferDuration = 0.5;
 
   AVAsset *asset = [item asset];
   void (^assetCompletionHandler)(void) = ^{
