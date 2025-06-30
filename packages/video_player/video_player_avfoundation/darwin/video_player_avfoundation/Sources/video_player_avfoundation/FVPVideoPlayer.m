@@ -48,6 +48,10 @@ static void *rateContext = &rateContext;
 
   _viewProvider = viewProvider;
 
+  // Configure buffering parameters
+  item.canUseNetworkResourcesForLiveStreamingWhilePaused = false;
+  item.preferredForwardBufferDuration = 10.0;
+
   AVAsset *asset = [item asset];
   void (^assetCompletionHandler)(void) = ^{
     if ([asset statusOfValueForKey:@"tracks" error:nil] == AVKeyValueStatusLoaded) {
