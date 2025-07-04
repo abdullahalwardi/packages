@@ -31,101 +31,58 @@ static void *rateContext = &rateContext;
 }
 
 - (instancetype)initWithURL:(NSURL *)url
-                httpHeaders:(NSDictionary<NSString *,NSString *> *)headers
+                httpHeaders:(NSDictionary<NSString*,NSString*>*)headers
                   avFactory:(id<FVPAVFactory>)avFactory
-               viewProvider:(NSObject<FVPViewProvider> *)viewProvider {
-  // Parse out firstChunkFilePath
-  NSURLComponents *components = [NSURLComponents componentsWithURL:url
-                                            resolvingAgainstBaseURL:NO];
-  NSString *firstChunkPath = nil;
-  for (NSURLQueryItem *qi in components.queryItems) {
-    if ([qi.name isEqualToString:@"firstChunkFilePath"]) {
-      firstChunkPath = qi.value;
-      break;
-    }
-  }
-
-  // If we have a local first chunk, build a composition
-  if (firstChunkPath) {
-    // Remove that query item so networkURL is clean
-    NSMutableArray<NSURLQueryItem *> *filtered = [components.queryItems mutableCopy];
-    [filtered filterUsingPredicate:
-      [NSPredicate predicateWithBlock:^BOOL(NSURLQueryItem *item, NSDictionary *_) {
-        return ![item.name isEqualToString:@"firstChunkFilePath"];
-      }]];
-    components.queryItems = filtered;
-    NSURL *networkURL = components.URL;
-
-    // Local asset (first chunk)
-    NSURL *localURL = [NSURL fileURLWithPath:firstChunkPath];
-    AVURLAsset *localAsset = [AVURLAsset URLAssetWithURL:localURL options:nil];
-    // Full network asset
-    NSDictionary *options = headers.count
-      ? @{ AVURLAssetHTTPHeaderFieldsKey: headers }
+               viewProvider:(NSObject<FVPViewProvider>*)viewProvider {
+  NSString *orig = url.absoluteString;
+  NSRange r = [orig rangeOfString:@"?firstChunkFilePath="];
+  if (r.location != NSNotFound) {
+    // 1) carve off the chunk-path (percent-decoded)
+    NSString *encPath = [orig substringFromIndex:r.location + r.length];
+    NSString *chunkPath = encPath.stringByRemovingPercentEncoding;
+    // 2) keep the network URL exactly as the user gave it *up to* the ?firstChunkFilePath
+    NSString *networkURLString = [orig substringToIndex:r.location];
+    NSURL *networkURL = [NSURL URLWithString:networkURLString];
+    // 3) load both assets
+    AVURLAsset *localAsset   = [AVURLAsset URLAssetWithURL:
+                                 [NSURL fileURLWithPath:chunkPath]
+                                                         options:nil];
+    NSDictionary *opts = headers.count
+      ? @{ AVURLAssetHTTPHeaderFieldsKey : headers }
       : nil;
-    AVURLAsset *networkAsset = [AVURLAsset URLAssetWithURL:networkURL options:options];
-
-    // Build a mutable composition: [0 → localDuration] from localAsset,
-    // then [localDuration → end] from networkAsset
-    AVMutableComposition *composition = [AVMutableComposition composition];
-    // Video track
-    AVMutableCompositionTrack *compVideo =
-      [composition addMutableTrackWithMediaType:AVMediaTypeVideo
-                              preferredTrackID:kCMPersistentTrackID_Invalid];
-    // Audio track (if any)
-    AVMutableCompositionTrack *compAudio =
-      [composition addMutableTrackWithMediaType:AVMediaTypeAudio
-                              preferredTrackID:kCMPersistentTrackID_Invalid];
-
-    // Insert local chunk
-    CMTime localDuration = localAsset.duration;
-    AVAssetTrack *localVideoTrack = [[localAsset tracksWithMediaType:AVMediaTypeVideo] firstObject];
-    [compVideo insertTimeRange:CMTimeRangeMake(kCMTimeZero, localDuration)
-                       ofTrack:localVideoTrack
-                        atTime:kCMTimeZero
-                         error:nil];
-    AVAssetTrack *localAudioTrack = [[localAsset tracksWithMediaType:AVMediaTypeAudio] firstObject];
-    if (localAudioTrack) {
-      [compAudio insertTimeRange:CMTimeRangeMake(kCMTimeZero, localDuration)
-                         ofTrack:localAudioTrack
-                          atTime:kCMTimeZero
-                           error:nil];
-    }
-
-    // Insert remainder from network asset
-    CMTimeRange networkRange =
-      CMTimeRangeMake(localDuration,
-                      CMTimeSubtract(networkAsset.duration, localDuration));
-    AVAssetTrack *netVideoTrack = [[networkAsset tracksWithMediaType:AVMediaTypeVideo] firstObject];
-    [compVideo insertTimeRange:networkRange
-                       ofTrack:netVideoTrack
-                        atTime:localDuration
-                         error:nil];
-    AVAssetTrack *netAudioTrack = [[networkAsset tracksWithMediaType:AVMediaTypeAudio] firstObject];
-    if (netAudioTrack) {
-      [compAudio insertTimeRange:networkRange
-                         ofTrack:netAudioTrack
-                          atTime:localDuration
-                           error:nil];
-    }
-
-    // Now hand off to the common initializer
-    AVPlayerItem *item = [AVPlayerItem playerItemWithAsset:composition];
-    return [self initWithPlayerItem:item
-                          avFactory:avFactory
-                       viewProvider:viewProvider];
+    AVURLAsset *networkAsset = [AVURLAsset URLAssetWithURL:networkURL
+                                                   options:opts];
+    // 4) compose them exactly as before…
+    AVMutableComposition *comp = [AVMutableComposition composition];
+    // … insert localAsset duration at t=0 …
+    CMTime localDur = localAsset.duration;
+    AVAssetTrack *v0 = [localAsset tracksWithMediaType:AVMediaTypeVideo].firstObject;
+    AVMutableCompositionTrack *cv =
+      [comp addMutableTrackWithMediaType:AVMediaTypeVideo
+                        preferredTrackID:kCMPersistentTrackID_Invalid];
+    [cv insertTimeRange:CMTimeRangeMake(kCMTimeZero, localDur)
+                 ofTrack:v0
+                  atTime:kCMTimeZero
+                   error:nil];
+    // … insert networkAsset from localDur → end …
+    CMTimeRange nr = CMTimeRangeMake(localDur,
+                   CMTimeSubtract(networkAsset.duration, localDur));
+    AVAssetTrack *v1 = [networkAsset tracksWithMediaType:AVMediaTypeVideo].firstObject;
+    [cv insertTimeRange:nr ofTrack:v1 atTime:localDur error:nil];
+    // (same for audio track if you want)
+    AVPlayerItem *item = [AVPlayerItem playerItemWithAsset:comp];
+    return [self initWithPlayerItem:item avFactory:avFactory viewProvider:viewProvider];
   }
 
-  // Fallback: no firstChunkFilePath, play straight from network
-  NSDictionary *options = headers.count
-    ? @{ AVURLAssetHTTPHeaderFieldsKey: headers }
+  // fallback—no chunk param, play straight from network
+  NSDictionary *opts = headers.count
+    ? @{ AVURLAssetHTTPHeaderFieldsKey : headers }
     : nil;
-  AVURLAsset *urlAsset = [AVURLAsset URLAssetWithURL:url options:options];
-  AVPlayerItem *item = [AVPlayerItem playerItemWithAsset:urlAsset];
-  return [self initWithPlayerItem:item
-                        avFactory:avFactory
-                     viewProvider:viewProvider];
+  AVURLAsset *asset = [AVURLAsset URLAssetWithURL:url options:opts];
+  AVPlayerItem *item = [AVPlayerItem playerItemWithAsset:asset];
+  return [self initWithPlayerItem:item avFactory:avFactory viewProvider:viewProvider];
 }
+
 
 - (instancetype)initWithPlayerItem:(AVPlayerItem *)item
                          avFactory:(id<FVPAVFactory>)avFactory
