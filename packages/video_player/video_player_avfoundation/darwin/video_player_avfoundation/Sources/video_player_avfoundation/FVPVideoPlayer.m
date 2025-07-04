@@ -56,7 +56,6 @@ static void *rateContext = &rateContext;
    _player = [avFactory playerWithPlayerItem:item];
    _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
    _player.automaticallyWaitsToMinimizeStalling = NO;         // reduce stall delays
-   _player.allowsExternalPlayback = NO;                       // keep playback in-app
    _player.currentItem.preferredPeakBitRate = 600000;       // cap bitrate at 3 Mbps
    _player.currentItem.preferredForwardBufferDuration = 0.25;  // fine-tune buffer depth
 
