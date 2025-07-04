@@ -55,10 +55,10 @@ public abstract class VideoPlayer {
         new LoadControl.Builder()
             .setAllocator(new DefaultAllocator(true, C.DEFAULT_BUFFER_SEGMENT_SIZE))
             .setBufferDurationsMs(
-                5_000,
                 10_000,
-                1_000,
-                3_000)
+                10_000,
+                500,
+                2_000)
             .setTargetBufferBytes(options.targetBufferBytes)
             .setPrioritizeTimeOverSizeThresholds(options.prioritizeTimeOverSizeThresholds)
             .build();
