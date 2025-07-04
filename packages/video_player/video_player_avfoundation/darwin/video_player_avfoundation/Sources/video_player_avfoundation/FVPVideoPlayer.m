@@ -116,15 +116,6 @@ static void *rateContext = &rateContext;
 }
 
 
-  // fallback—no chunk param, play straight from network
-  NSDictionary *opts = headers.count
-    ? @{ AVURLAssetHTTPHeaderFieldsKey : headers }
-    : nil;
-  AVURLAsset *asset = [AVURLAsset URLAssetWithURL:url options:opts];
-  AVPlayerItem *item = [AVPlayerItem playerItemWithAsset:asset];
-  return [self initWithPlayerItem:item avFactory:avFactory viewProvider:viewProvider];
-}
-
 
 - (instancetype)initWithPlayerItem:(AVPlayerItem *)item
                          avFactory:(id<FVPAVFactory>)avFactory
