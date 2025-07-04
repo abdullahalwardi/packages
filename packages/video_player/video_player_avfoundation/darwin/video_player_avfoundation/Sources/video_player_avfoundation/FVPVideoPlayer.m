@@ -49,14 +49,14 @@ static void *rateContext = &rateContext;
    _viewProvider = viewProvider;
 
    // Configure buffering and latency parameters for low-latency playback
-   item.canUseNetworkResourcesForLiveStreamingWhilePaused = NO;
-   item.preferredForwardBufferDuration = 0.25; // minimal prebuffer
+  //  item.canUseNetworkResourcesForLiveStreamingWhilePaused = NO;
+  //  item.preferredForwardBufferDuration = 0.25; // minimal prebuffer
    
    // Instantiate player
    _player = [avFactory playerWithPlayerItem:item];
    _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
   //  _player.automaticallyWaitsToMinimizeStalling = NO;         // reduce stall delays
-   _player.currentItem.preferredPeakBitRate = 600000;       // cap bitrate at 3 Mbps
+  //  _player.currentItem.preferredPeakBitRate = 600000;       // cap bitrate at 3 Mbps
   //  _player.currentItem.preferredForwardBufferDuration = 0.25;  // fine-tune buffer depth
 
    // Configure pixel-buffer output (YUV for hardware-accelerated decoding)
