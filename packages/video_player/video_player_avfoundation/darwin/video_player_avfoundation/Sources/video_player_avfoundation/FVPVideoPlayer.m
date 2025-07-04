@@ -48,6 +48,10 @@ static void *rateContext = &rateContext;
 
   _viewProvider = viewProvider;
 
+       // Configure buffering and latency parameters for low-latency playback
+   item.canUseNetworkResourcesForLiveStreamingWhilePaused = NO;
+   item.preferredForwardBufferDuration = 0.5; // minimal prebuffer
+
   AVAsset *asset = [item asset];
   void (^assetCompletionHandler)(void) = ^{
     if ([asset statusOfValueForKey:@"tracks" error:nil] == AVKeyValueStatusLoaded) {
@@ -80,10 +84,6 @@ static void *rateContext = &rateContext;
       }
     }
   };
-
-  item.canUseNetworkResourcesForLiveStreamingWhilePaused = NO;
-  item.preferredForwardBufferDuration = 0.5; // minimal prebuffer
-  
 
   _player = [avFactory playerWithPlayerItem:item];
   _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
