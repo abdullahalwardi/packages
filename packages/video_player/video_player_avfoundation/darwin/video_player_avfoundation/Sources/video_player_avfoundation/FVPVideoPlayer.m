@@ -34,8 +34,28 @@ static void *rateContext = &rateContext;
                 httpHeaders:(NSDictionary<NSString*,NSString*>*)headers
                   avFactory:(id<FVPAVFactory>)avFactory
                viewProvider:(NSObject<FVPViewProvider>*)viewProvider {
+
+  // 1️⃣ Log the full incoming URL
+  NSLog(@"[FVPVideoPlayer] full URL: %@", url.absoluteString);
+
   NSString *fullString = url.absoluteString;
   NSRange splitRange = [fullString rangeOfString:@"?firstChunkFilePath="];
+  if (splitRange.location != NSNotFound) {
+    // 2️⃣ Extract and decode the local‐file path
+    NSString *encChunk = [fullString substringFromIndex:splitRange.location + splitRange.length];
+    NSString *localPath = encChunk.stringByRemovingPercentEncoding;
+    NSLog(@"[FVPVideoPlayer] local chunk path: %@", localPath);
+
+    // 3️⃣ Build the network URL string exactly as signed
+    NSString *networkString = [fullString substringToIndex:splitRange.location];
+    NSLog(@"[FVPVideoPlayer] network URL: %@", networkString);
+    NSURL *networkURL = [NSURL URLWithString:networkString];
+
+    // … rest of your composition logic …
+  } else {
+    // No chunk param, so just log the network URL
+    NSLog(@"[FVPVideoPlayer] playing network-only URL: %@", url.absoluteString);
+  }
 
   if (splitRange.location != NSNotFound) {
     // 1. Extract and decode the local‐file path
