@@ -374,6 +374,8 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// the [DataSourceType] of the original video.
   final String dataSource;
 
+  
+
   /// HTTP headers used for the request to the [dataSource].
   /// Only for [VideoPlayerController.network].
   /// Always empty for other video types.
