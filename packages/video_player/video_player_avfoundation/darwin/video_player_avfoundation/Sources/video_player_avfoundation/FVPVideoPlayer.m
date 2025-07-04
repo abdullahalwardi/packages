@@ -17,7 +17,25 @@ static void *durationContext = &durationContext;
 static void *playbackLikelyToKeepUpContext = &playbackLikelyToKeepUpContext;
 static void *rateContext = &rateContext;
 
+static const NSTimeInterval kBufferThresholdSeconds = 2.0;
+
 @implementation FVPVideoPlayer
+
+#pragma mark ––– Helper
+
+- (NSTimeInterval)bufferedAhead {
+    NSArray<NSValue *> *ranges = self.player.currentItem.loadedTimeRanges;
+    if (ranges.count == 0) {
+        return 0;
+    }
+    CMTimeRange lastRange = [ranges.lastObject CMTimeRangeValue];
+    // end of buffer in seconds
+    NSTimeInterval bufferEnd = CMTimeGetSeconds(CMTimeAdd(lastRange.start, lastRange.duration));
+    // current time in seconds
+    NSTimeInterval current = CMTimeGetSeconds(self.player.currentTime);
+    return MAX(0, bufferEnd - current);
+}
+
 - (instancetype)initWithAsset:(NSString *)asset
                     avFactory:(id<FVPAVFactory>)avFactory
                  viewProvider:(NSObject<FVPViewProvider> *)viewProvider {
@@ -235,7 +253,30 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
                       ofObject:(id)object
                         change:(NSDictionary *)change
                        context:(void *)context {
-  if (context == timeRangeContext) {
+  if (context == playbackLikelyToKeepUpContext) {
+        BOOL likely = [self.player.currentItem isPlaybackLikelyToKeepUp];
+        if (likely) {
+            // only end buffering if we've got >=2 s buffered
+            if ([self bufferedAhead] >= kBufferThresholdSeconds) {
+                if (_eventSink) {
+                    _eventSink(@{ @"event": @"bufferingEnd" });
+                }
+                [self updatePlayingState];
+            } else {
+                // still below threshold
+                if (_eventSink) {
+                    _eventSink(@{ @"event": @"bufferingStart" });
+                }
+            }
+        } else {
+            // just entered buffering
+            if (_eventSink) {
+                _eventSink(@{ @"event": @"bufferingStart" });
+            }
+            [self.player pause];
+        }
+    }                     
+  else if (context == timeRangeContext) {
     if (_eventSink != nil) {
       NSMutableArray<NSArray<NSNumber *> *> *values = [[NSMutableArray alloc] init];
       for (NSValue *rangeValue in [object loadedTimeRanges]) {
@@ -289,22 +330,31 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 }
 
 - (void)updatePlayingState {
-  if (!_isInitialized) {
-    return;
-  }
-  if (_isPlaying) {
-    // Calling play is the same as setting the rate to 1.0 (or to defaultRate depending on iOS
-    // version) so last set playback speed must be set here if any instead.
-    // https://github.com/flutter/flutter/issues/71264
-    // https://github.com/flutter/flutter/issues/73643
-    if (_targetPlaybackSpeed) {
-      [self updateRate];
-    } else {
-      [_player play];
+    if (!_isInitialized) {
+        return;
     }
-  } else {
-    [_player pause];
-  }
+    if (_isPlaying) {
+        // Only start/resume if we've got enough buffer
+        if ([self.player.currentItem isPlaybackLikelyToKeepUp]) {
+            if ([self bufferedAhead] >= kBufferThresholdSeconds) {
+                if (_targetPlaybackSpeed) {
+                    [self updateRate];
+                } else {
+                    [self.player play];
+                }
+            } else {
+                // still under threshold: keep paused and emit buffering event
+                if (_eventSink) {
+                    _eventSink(@{ @"event": @"bufferingStart" });
+                }
+            }
+        } else {
+            // not likely to keep up: pause
+            [self.player pause];
+        }
+    } else {
+        [self.player pause];
+    }
 }
 
 /// Synchronizes the player's playback rate with targetPlaybackSpeed, constrained by the playback
