@@ -82,7 +82,7 @@ static void *rateContext = &rateContext;
   };
 
   item.canUseNetworkResourcesForLiveStreamingWhilePaused = NO;
-  item.preferredForwardBufferDuration = 0.25; // minimal prebuffer
+  item.preferredForwardBufferDuration = 0.5; // minimal prebuffer
   
 
   _player = [avFactory playerWithPlayerItem:item];
@@ -90,7 +90,7 @@ static void *rateContext = &rateContext;
 
   _player.automaticallyWaitsToMinimizeStalling = NO;         // reduce stall delays
   _player.currentItem.preferredPeakBitRate = 600000;       // cap bitrate at 3 Mbps
-  _player.currentItem.preferredForwardBufferDuration = 0.25;  // fine-tune buffer depth
+  _player.currentItem.preferredForwardBufferDuration = 0.5;  // fine-tune buffer depth
 
   // Configure output.
   NSDictionary *pixBuffAttributes = @{
