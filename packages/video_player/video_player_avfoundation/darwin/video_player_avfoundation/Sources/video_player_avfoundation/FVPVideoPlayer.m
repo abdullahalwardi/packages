@@ -41,66 +41,63 @@ static void *rateContext = &rateContext;
 }
 
 - (instancetype)initWithPlayerItem:(AVPlayerItem *)item
-                         avFactory:(id<FVPAVFactory>)avFactory
-                      viewProvider:(NSObject<FVPViewProvider> *)viewProvider {
-  self = [super init];
-  NSAssert(self, @"super init cannot be nil");
+                          avFactory:(id<FVPAVFactory>)avFactory
+                       viewProvider:(NSObject<FVPViewProvider> *)viewProvider {
+   self = [super init];
+   NSAssert(self, @"super init cannot be nil");
 
-  _viewProvider = viewProvider;
+   _viewProvider = viewProvider;
 
-  // Configure buffering parameters
-  item.canUseNetworkResourcesForLiveStreamingWhilePaused = false;
-  item.preferredForwardBufferDuration = 1;
+   // Configure buffering and latency parameters for low-latency playback
+   item.canUseNetworkResourcesForLiveStreamingWhilePaused = NO;
+   item.preferredForwardBufferDuration = 0.25; // minimal prebuffer
+   
+   // Instantiate player
+   _player = [avFactory playerWithPlayerItem:item];
+   _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
+   _player.automaticallyWaitsToMinimizeStalling = NO;         // reduce stall delays
+   _player.allowsExternalPlayback = NO;                       // keep playback in-app
+   _player.currentItem.preferredPeakBitRate = 600000;       // cap bitrate at 3 Mbps
+   _player.currentItem.preferredForwardBufferDuration = 0.25;  // fine-tune buffer depth
 
-  AVAsset *asset = [item asset];
-  void (^assetCompletionHandler)(void) = ^{
-    if ([asset statusOfValueForKey:@"tracks" error:nil] == AVKeyValueStatusLoaded) {
-      NSArray *tracks = [asset tracksWithMediaType:AVMediaTypeVideo];
-      if ([tracks count] > 0) {
-        AVAssetTrack *videoTrack = tracks[0];
-        void (^trackCompletionHandler)(void) = ^{
-          if (self->_disposed) return;
-          if ([videoTrack statusOfValueForKey:@"preferredTransform"
-                                        error:nil] == AVKeyValueStatusLoaded) {
-            // Rotate the video by using a videoComposition and the preferredTransform
-            self->_preferredTransform = FVPGetStandardizedTransformForTrack(videoTrack);
-            // Do not use video composition when it is not needed.
-            if (CGAffineTransformIsIdentity(self->_preferredTransform)) {
-              return;
-            }
-            // Note:
-            // https://developer.apple.com/documentation/avfoundation/avplayeritem/1388818-videocomposition
-            // Video composition can only be used with file-based media and is not supported for
-            // use with media served using HTTP Live Streaming.
-            AVMutableVideoComposition *videoComposition =
-                [self getVideoCompositionWithTransform:self->_preferredTransform
-                                             withAsset:asset
-                                        withVideoTrack:videoTrack];
-            item.videoComposition = videoComposition;
-          }
-        };
-        [videoTrack loadValuesAsynchronouslyForKeys:@[ @"preferredTransform" ]
-                                  completionHandler:trackCompletionHandler];
-      }
-    }
-  };
+   // Configure pixel-buffer output (YUV for hardware-accelerated decoding)
+   NSDictionary *pixBuffAttributes = @{
+     (id)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange),
+     (id)kCVPixelBufferIOSurfacePropertiesKey : @{}
+   };
+   _videoOutput = [avFactory videoOutputWithPixelBufferAttributes:pixBuffAttributes];
 
-  _player = [avFactory playerWithPlayerItem:item];
-  _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
+   [self addObserversForItem:item player:_player];
 
-  // Configure output.
-  NSDictionary *pixBuffAttributes = @{
-    (id)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_32BGRA),
-    (id)kCVPixelBufferIOSurfacePropertiesKey : @{}
-  };
-  _videoOutput = [avFactory videoOutputWithPixelBufferAttributes:pixBuffAttributes];
+   // Asynchronously load asset tracks
+   AVAsset *asset = [item asset];
+   void (^assetCompletionHandler)(void) = ^{
+     if ([asset statusOfValueForKey:@"tracks" error:nil] == AVKeyValueStatusLoaded) {
+       NSArray *tracks = [asset tracksWithMediaType:AVMediaTypeVideo];
+       if ([tracks count] > 0) {
+         AVAssetTrack *videoTrack = tracks[0];
+         void (^trackCompletionHandler)(void) = ^{
+           if (self->_disposed) return;
+           if ([videoTrack statusOfValueForKey:@"preferredTransform" error:nil] == AVKeyValueStatusLoaded) {
+             self->_preferredTransform = FVPGetStandardizedTransformForTrack(videoTrack);
+             if (!CGAffineTransformIsIdentity(self->_preferredTransform)) {
+               AVMutableVideoComposition *videoComposition =
+                   [self getVideoCompositionWithTransform:self->_preferredTransform
+                                                withAsset:asset
+                                           withVideoTrack:videoTrack];
+               item.videoComposition = videoComposition;
+             }
+           }
+         };
+         [videoTrack loadValuesAsynchronouslyForKeys:@[@"preferredTransform"]
+                                   completionHandler:trackCompletionHandler];
+       }
+     }
+   };
+   [asset loadValuesAsynchronouslyForKeys:@[@"tracks"] completionHandler:assetCompletionHandler];
 
-  [self addObserversForItem:item player:_player];
-
-  [asset loadValuesAsynchronouslyForKeys:@[ @"tracks" ] completionHandler:assetCompletionHandler];
-
-  return self;
-}
+   return self;
+ }
 
 - (void)dealloc {
   if (!_disposed) {
