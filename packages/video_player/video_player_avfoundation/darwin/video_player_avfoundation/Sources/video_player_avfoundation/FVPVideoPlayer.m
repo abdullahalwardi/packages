@@ -50,7 +50,7 @@ static void *rateContext = &rateContext;
 
    // Configure buffering and latency parameters for low-latency playback
    item.canUseNetworkResourcesForLiveStreamingWhilePaused = NO;
-   item.preferredForwardBufferDuration = 0.25; // minimal prebuffer
+   item.preferredForwardBufferDuration = 0; // minimal prebuffer
    
    // Instantiate player
    _player = [avFactory playerWithPlayerItem:item];
