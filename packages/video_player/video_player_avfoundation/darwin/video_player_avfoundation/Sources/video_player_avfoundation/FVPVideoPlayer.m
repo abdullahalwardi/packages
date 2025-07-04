@@ -81,12 +81,20 @@ static void *rateContext = &rateContext;
     }
   };
 
+  item.canUseNetworkResourcesForLiveStreamingWhilePaused = NO;
+  item.preferredForwardBufferDuration = 0.25; // minimal prebuffer
+  
+
   _player = [avFactory playerWithPlayerItem:item];
   _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
 
+  _player.automaticallyWaitsToMinimizeStalling = NO;         // reduce stall delays
+  _player.currentItem.preferredPeakBitRate = 600000;       // cap bitrate at 3 Mbps
+  _player.currentItem.preferredForwardBufferDuration = 0.25;  // fine-tune buffer depth
+
   // Configure output.
   NSDictionary *pixBuffAttributes = @{
-    (id)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_32BGRA),
+    (id)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange),
     (id)kCVPixelBufferIOSurfacePropertiesKey : @{}
   };
   _videoOutput = [avFactory videoOutputWithPixelBufferAttributes:pixBuffAttributes];
