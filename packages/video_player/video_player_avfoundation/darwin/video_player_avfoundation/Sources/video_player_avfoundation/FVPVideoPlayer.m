@@ -38,7 +38,7 @@ static void *rateContext = &rateContext;
   NSLog(@"[FVPVideoPlayer] incoming URL: %@", url.absoluteString);
 
   NSString *fullString = url.absoluteString;
-  NSRange splitRange = [fullString rangeOfString:@"?firstChunkFilePath="];
+  NSRange splitRange = [fullString rangeOfString:@"&firstChunkFilePath="];
 
   if (splitRange.location != NSNotFound) {
     // Extract & decode the local-chunk file path
@@ -46,7 +46,7 @@ static void *rateContext = &rateContext;
     NSString *localPath = encChunk.stringByRemovingPercentEncoding;
     NSLog(@"[FVPVideoPlayer] local chunk path: %@", localPath);
 
-    // Build & log the exact network URL (everything before ?firstChunkFilePath)
+    // Build & log the exact network URL (everything before &firstChunkFilePath)
     NSString *networkString = [fullString substringToIndex:splitRange.location];
     NSLog(@"[FVPVideoPlayer] network URL: %@", networkString);
     NSURL *networkURL = [NSURL URLWithString:networkString];
