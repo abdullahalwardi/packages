@@ -18,21 +18,20 @@ static void *playbackLikelyToKeepUpContext = &playbackLikelyToKeepUpContext;
 static void *rateContext = &rateContext;
 
 static const NSTimeInterval kBufferThresholdSeconds = 2.0;
+static const NSTimeInterval kInitialBufferSeconds = 0.25;  // first-play threshold
 
-@implementation FVPVideoPlayer
+@implementation FVPVideoPlayer {
+    BOOL _didStartPlayingOnce;
+}
 
 #pragma mark ––– Helper
 
 - (NSTimeInterval)bufferedAhead {
     NSArray<NSValue *> *ranges = self.player.currentItem.loadedTimeRanges;
-    if (ranges.count == 0) {
-        return 0;
-    }
+    if (ranges.count == 0) return 0;
     CMTimeRange lastRange = [ranges.lastObject CMTimeRangeValue];
-    // end of buffer in seconds
     NSTimeInterval bufferEnd = CMTimeGetSeconds(CMTimeAdd(lastRange.start, lastRange.duration));
-    // current time in seconds
-    NSTimeInterval current = CMTimeGetSeconds(self.player.currentTime);
+    NSTimeInterval current  = CMTimeGetSeconds(self.player.currentTime);
     return MAX(0, bufferEnd - current);
 }
 
@@ -255,28 +254,24 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
                        context:(void *)context {
   if (context == playbackLikelyToKeepUpContext) {
         BOOL likely = [self.player.currentItem isPlaybackLikelyToKeepUp];
-        if (likely) {
-            // only end buffering if we've got >=2 s buffered
-            if ([self bufferedAhead] >= kBufferThresholdSeconds) {
-                if (_eventSink) {
-                    _eventSink(@{ @"event": @"bufferingEnd" });
-                }
-                [self updatePlayingState];
-            } else {
-                // still below threshold
-                if (_eventSink) {
-                    _eventSink(@{ @"event": @"bufferingStart" });
-                }
+        NSTimeInterval threshold = _didStartPlayingOnce
+            ? kRebufferThresholdSeconds
+            : kInitialBufferSeconds;
+
+        if (likely && [self bufferedAhead] >= threshold) {
+            if (_eventSink) {
+                _eventSink(@{ @"event": @"bufferingEnd" });
             }
+            [self updatePlayingState];
         } else {
-            // just entered buffering
             if (_eventSink) {
                 _eventSink(@{ @"event": @"bufferingStart" });
             }
             [self.player pause];
         }
-    }                     
-  else if (context == timeRangeContext) {
+
+    }else{
+      if (context == timeRangeContext) {
     if (_eventSink != nil) {
       NSMutableArray<NSArray<NSNumber *> *> *values = [[NSMutableArray alloc] init];
       for (NSValue *rangeValue in [object loadedTimeRanges]) {
@@ -327,30 +322,38 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
           @{@"event" : @"isPlayingStateUpdate", @"isPlaying" : player.rate > 0 ? @YES : @NO});
     }
   }
+    }                     
+   
 }
 
 - (void)updatePlayingState {
-    if (!_isInitialized) {
-        return;
-    }
+    if (!_isInitialized) return;
+
+    NSTimeInterval threshold = _didStartPlayingOnce
+        ? kRebufferThresholdSeconds
+        : kInitialBufferSeconds;
+
     if (_isPlaying) {
-        // Only start/resume if we've got enough buffer
-        if ([self.player.currentItem isPlaybackLikelyToKeepUp]) {
-            if ([self bufferedAhead] >= kBufferThresholdSeconds) {
-                if (_targetPlaybackSpeed) {
-                    [self updateRate];
-                } else {
-                    [self.player play];
-                }
+        // Only start/resume if likely to keep up AND we have >= threshold buffered
+        if ([self.player.currentItem isPlaybackLikelyToKeepUp]
+            && [self bufferedAhead] >= threshold) {
+
+            // perform play (or fast/slow)…
+            if (_targetPlaybackSpeed) {
+                [self updateRate];
             } else {
-                // still under threshold: keep paused and emit buffering event
-                if (_eventSink) {
-                    _eventSink(@{ @"event": @"bufferingStart" });
-                }
+                [self.player play];
             }
+
+            // mark that the first play has happened
+            _didStartPlayingOnce = YES;
+
         } else {
-            // not likely to keep up: pause
+            // not enough buffer yet—stay paused, emit buffering
             [self.player pause];
+            if (_eventSink) {
+                _eventSink(@{ @"event": @"bufferingStart" });
+            }
         }
     } else {
         [self.player pause];
