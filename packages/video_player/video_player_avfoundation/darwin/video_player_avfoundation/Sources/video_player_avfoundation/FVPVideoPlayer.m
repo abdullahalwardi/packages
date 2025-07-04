@@ -255,7 +255,7 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
   if (context == playbackLikelyToKeepUpContext) {
         BOOL likely = [self.player.currentItem isPlaybackLikelyToKeepUp];
         NSTimeInterval threshold = _didStartPlayingOnce
-            ? kRebufferThresholdSeconds
+            ? kBufferThresholdSeconds
             : kInitialBufferSeconds;
 
         if (likely && [self bufferedAhead] >= threshold) {
@@ -330,7 +330,7 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
     if (!_isInitialized) return;
 
     NSTimeInterval threshold = _didStartPlayingOnce
-        ? kRebufferThresholdSeconds
+        ? kBufferThresholdSeconds
         : kInitialBufferSeconds;
 
     if (_isPlaying) {
