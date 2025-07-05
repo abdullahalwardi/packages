@@ -54,40 +54,51 @@
                   avFactory:(id<FVPAVFactory>)avFactory
                viewProvider:(NSObject<FVPViewProvider>*)viewProvider
                  onDisposed:(void (^)(int64_t))onDisposed {
-
-  // 1️⃣ detect local chunk
+  
+  // 1️⃣ Build AVPlayer or AVQueuePlayer
   NSString *firstChunk = headers[@"firstChunkFilePath"];
   NSURL    *localURL   = firstChunk ? [NSURL fileURLWithPath:firstChunk] : nil;
-
-  // 2️⃣ network asset
   NSDictionary *opts   = headers.count
                         ? @{ @"AVURLAssetHTTPHeaderFieldsKey": headers }
                         : nil;
   AVURLAsset   *netAsset = [AVURLAsset URLAssetWithURL:url options:opts];
   AVPlayerItem *netItem  = [AVPlayerItem playerItemWithAsset:netAsset];
 
-  AVPlayer *player;
+  AVPlayer *injectedPlayer;
+  AVPlayerItem *firstItem;
   if (localURL) {
-    // a) local item
     AVURLAsset  *localAsset = [AVURLAsset URLAssetWithURL:localURL options:nil];
     AVPlayerItem *localItem = [AVPlayerItem playerItemWithAsset:localAsset];
-
-    // b) queue up local→network
-    AVQueuePlayer *queue = [AVQueuePlayer queuePlayerWithItems:@[ localItem, netItem ]];
-    player = queue;
+    injectedPlayer = [AVQueuePlayer queuePlayerWithItems:@[localItem, netItem]];
+    firstItem      = localItem;
   } else {
-    // no chunk: single‐asset player
-    player = [avFactory playerWithPlayerItem:netItem];
+    injectedPlayer = [avFactory playerWithPlayerItem:netItem];
+    firstItem      = netItem;
   }
 
-  // 3️⃣ Hand off to your existing initWithPlayerItem:…
-  return [self initWithPlayerItem:netItem
-                     frameUpdater:frameUpdater
-                      displayLink:displayLink
-                        avFactory:avFactory
-                     viewProvider:viewProvider
-                       onDisposed:onDisposed];
+  // 2️⃣ Call base initializer with the first item to observe
+  self = [super initWithPlayerItem:firstItem avFactory:avFactory viewProvider:viewProvider];
+  if (!self) return nil;
+
+  // 3️⃣ Inject the AVPlayer (queue or single) via KVC and reapply settings
+  [self setValue:injectedPlayer forKey:@"player"];
+  injectedPlayer.automaticallyWaitsToMinimizeStalling    = NO;
+  injectedPlayer.currentItem.preferredForwardBufferDuration = 0.5;
+  injectedPlayer.currentItem.preferredPeakBitRate          = 600000;
+
+  // 4️⃣ Texture-based subclass setup
+  _frameUpdater  = frameUpdater;
+  _displayLink   = displayLink;
+  _frameUpdater.displayLink = _displayLink;
+  _selfRefresh   = YES;
+  _onDisposed    = [onDisposed copy];
+
+  _playerLayer = [AVPlayerLayer playerLayerWithPlayer:self.player];
+  [viewProvider.view.layer addSublayer:_playerLayer];
+
+  return self;
 }
+
 
 
 
