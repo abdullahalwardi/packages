@@ -31,88 +31,16 @@ static void *rateContext = &rateContext;
 }
 
 - (instancetype)initWithURL:(NSURL *)url
-                httpHeaders:(NSDictionary<NSString *, NSString *> *)headers
+                httpHeaders:(nonnull NSDictionary<NSString *, NSString *> *)headers
                   avFactory:(id<FVPAVFactory>)avFactory
                viewProvider:(NSObject<FVPViewProvider> *)viewProvider {
-  // Log what we're getting
-  NSLog(@"[FVPVideoPlayer] URL: %@", url.absoluteString);
-  NSLog(@"[FVPVideoPlayer] headers: %@", headers);
-
-  // 1️⃣ Check headers for firstChunkFilePath
-  NSString *firstChunkPath = headers[@"firstChunkFilePath"];
-  if (firstChunkPath) {
-    // 2️⃣ Remove it so we don't send it to AVURLAsset
-    NSMutableDictionary *cleanHeaders = [headers mutableCopy];
-    [cleanHeaders removeObjectForKey:@"firstChunkFilePath"];
-
-    // 3️⃣ Build the two assets
-    // Local: first chunk file
-    NSURL *localURL = [NSURL fileURLWithPath:firstChunkPath];
-    AVURLAsset *localAsset = [AVURLAsset URLAssetWithURL:localURL options:nil];
-
-    // Network: use the original URL + remaining headers
-    NSDictionary *opts = cleanHeaders.count
-      ? @{ AVURLAssetHTTPHeaderFieldsKey : cleanHeaders }
-      : nil;
-    AVURLAsset *netAsset = [AVURLAsset URLAssetWithURL:url options:opts];
-
-    // 4️⃣ Stitch into a composition
-    CMTime localDur = localAsset.duration;
-    AVMutableComposition *comp = [AVMutableComposition composition];
-
-    // Video track
-    AVMutableCompositionTrack *vTrack =
-      [comp addMutableTrackWithMediaType:AVMediaTypeVideo
-                        preferredTrackID:kCMPersistentTrackID_Invalid];
-    AVAssetTrack *v0 = [localAsset tracksWithMediaType:AVMediaTypeVideo].firstObject;
-    [vTrack insertTimeRange:CMTimeRangeMake(kCMTimeZero, localDur)
-                    ofTrack:v0
-                     atTime:kCMTimeZero
-                      error:nil];
-
-    AVAssetTrack *v1 = [netAsset tracksWithMediaType:AVMediaTypeVideo].firstObject;
-    CMTimeRange netRange = CMTimeRangeMake(localDur,
-      CMTimeSubtract(netAsset.duration, localDur));
-    [vTrack insertTimeRange:netRange
-                    ofTrack:v1
-                     atTime:localDur
-                      error:nil];
-
-    // Audio track (if present)
-    AVMutableCompositionTrack *aTrack =
-      [comp addMutableTrackWithMediaType:AVMediaTypeAudio
-                        preferredTrackID:kCMPersistentTrackID_Invalid];
-    AVAssetTrack *a0 = [localAsset tracksWithMediaType:AVMediaTypeAudio].firstObject;
-    if (a0) {
-      [aTrack insertTimeRange:CMTimeRangeMake(kCMTimeZero, localDur)
-                      ofTrack:a0
-                       atTime:kCMTimeZero
-                        error:nil];
-    }
-    AVAssetTrack *a1 = [netAsset tracksWithMediaType:AVMediaTypeAudio].firstObject;
-    if (a1) {
-      [aTrack insertTimeRange:netRange
-                      ofTrack:a1
-                       atTime:localDur
-                        error:nil];
-    }
-
-    // 5️⃣ Hand off the composed item
-    AVPlayerItem *item = [AVPlayerItem playerItemWithAsset:comp];
-    return [self initWithPlayerItem:item
-                          avFactory:avFactory
-                       viewProvider:viewProvider];
+  NSDictionary<NSString *, id> *options = nil;
+  if ([headers count] != 0) {
+    options = @{@"AVURLAssetHTTPHeaderFieldsKey" : headers};
   }
-
-  // ——— No chunk header? Play straight from network ———
-  NSDictionary *opts = headers.count
-    ? @{ AVURLAssetHTTPHeaderFieldsKey : headers }
-    : nil;
-  AVURLAsset *asset = [AVURLAsset URLAssetWithURL:url options:opts];
-  AVPlayerItem *item = [AVPlayerItem playerItemWithAsset:asset];
-  return [self initWithPlayerItem:item
-                        avFactory:avFactory
-                     viewProvider:viewProvider];
+  AVURLAsset *urlAsset = [AVURLAsset URLAssetWithURL:url options:options];
+  AVPlayerItem *item = [AVPlayerItem playerItemWithAsset:urlAsset];
+  return [self initWithPlayerItem:item avFactory:avFactory viewProvider:viewProvider];
 }
 
 

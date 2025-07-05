@@ -9,7 +9,7 @@
 // The updater that drives callbacks to the engine to indicate that a new frame is ready.
 @property(nonatomic) FVPFrameUpdater *frameUpdater;
 // The display link that drives frameUpdater.
-@property(nonatomic) FVPDisplayLink *displayLink;
+@property(nonatomic) NSObject<FVPDisplayLink> *displayLink;
 // The latest buffer obtained from video output. This is stored so that it can be returned from
 // copyPixelBuffer again if nothing new is available, since the engine has undefined behavior when
 // returning NULL.
@@ -34,7 +34,7 @@
 @implementation FVPTextureBasedVideoPlayer
 - (instancetype)initWithAsset:(NSString *)asset
                  frameUpdater:(FVPFrameUpdater *)frameUpdater
-                  displayLink:(FVPDisplayLink *)displayLink
+                  displayLink:(NSObject<FVPDisplayLink> *)displayLink
                     avFactory:(id<FVPAVFactory>)avFactory
                  viewProvider:(NSObject<FVPViewProvider> *)viewProvider
                    onDisposed:(void (^)(int64_t))onDisposed {
@@ -49,63 +49,28 @@
 
 - (instancetype)initWithURL:(NSURL *)url
                frameUpdater:(FVPFrameUpdater *)frameUpdater
-                displayLink:(FVPDisplayLink *)displayLink
-               httpHeaders:(NSDictionary<NSString*,NSString*>*)headers
+                displayLink:(NSObject<FVPDisplayLink> *)displayLink
+                httpHeaders:(nonnull NSDictionary<NSString *, NSString *> *)headers
                   avFactory:(id<FVPAVFactory>)avFactory
-               viewProvider:(NSObject<FVPViewProvider>*)viewProvider
+               viewProvider:(NSObject<FVPViewProvider> *)viewProvider
                  onDisposed:(void (^)(int64_t))onDisposed {
-  
-  // 1️⃣ Build AVPlayer or AVQueuePlayer only if we have a local chunk
-  NSString *firstChunk = headers[@"firstChunkFilePath"];
-  NSURL    *localURL   = firstChunk ? [NSURL fileURLWithPath:firstChunk] : nil;
-  NSDictionary *opts   = headers.count
-                        ? @{ @"AVURLAssetHTTPHeaderFieldsKey": headers }
-                        : nil;
-  AVURLAsset   *netAsset = [AVURLAsset URLAssetWithURL:url options:opts];
-  AVPlayerItem *netItem  = [AVPlayerItem playerItemWithAsset:netAsset];
-
-  AVPlayer *injectedPlayer = nil;
-  AVPlayerItem *firstItem;
-  if (localURL) {
-    AVURLAsset  *localAsset = [AVURLAsset URLAssetWithURL:localURL options:nil];
-    AVPlayerItem *localItem = [AVPlayerItem playerItemWithAsset:localAsset];
-    injectedPlayer = [AVQueuePlayer queuePlayerWithItems:@[localItem, netItem]];
-    firstItem      = localItem;
-  } else {
-    firstItem      = netItem;
+  NSDictionary<NSString *, id> *options = nil;
+  if ([headers count] != 0) {
+    options = @{@"AVURLAssetHTTPHeaderFieldsKey" : headers};
   }
-
-  // 2️⃣ Initialize observing on the first item
-  self = [super initWithPlayerItem:firstItem avFactory:avFactory viewProvider:viewProvider];
-  if (!self) return nil;
-
-  // 3️⃣ If we injected a queue, overwrite the base player via KVC and reapply settings
-  if (injectedPlayer) {
-    [self setValue:injectedPlayer forKey:@"player"];
-    injectedPlayer.automaticallyWaitsToMinimizeStalling       = NO;
-    injectedPlayer.currentItem.preferredForwardBufferDuration = 0.5;
-    injectedPlayer.currentItem.preferredPeakBitRate           = 600000;
-  }
-
-  // 4️⃣ Texture-based subclass setup
-  _frameUpdater = frameUpdater;
-  _displayLink  = displayLink;
-  _frameUpdater.displayLink = _displayLink;
-  _selfRefresh  = YES;
-  _onDisposed   = [onDisposed copy];
-
-  _playerLayer  = [AVPlayerLayer playerLayerWithPlayer:self.player];
-  [viewProvider.view.layer addSublayer:_playerLayer];
-
-  return self;
+  AVURLAsset *urlAsset = [AVURLAsset URLAssetWithURL:url options:options];
+  AVPlayerItem *item = [AVPlayerItem playerItemWithAsset:urlAsset];
+  return [self initWithPlayerItem:item
+                     frameUpdater:frameUpdater
+                      displayLink:displayLink
+                        avFactory:avFactory
+                     viewProvider:viewProvider
+                       onDisposed:onDisposed];
 }
-
-
-
 
 - (instancetype)initWithPlayerItem:(AVPlayerItem *)item
                       frameUpdater:(FVPFrameUpdater *)frameUpdater
-                       displayLink:(FVPDisplayLink *)displayLink
+                       displayLink:(NSObject<FVPDisplayLink> *)displayLink
                          avFactory:(id<FVPAVFactory>)avFactory
                       viewProvider:(NSObject<FVPViewProvider> *)viewProvider
                         onDisposed:(void (^)(int64_t))onDisposed {
@@ -117,7 +82,6 @@
     _frameUpdater.displayLink = _displayLink;
     _selfRefresh = true;
     _onDisposed = [onDisposed copy];
-    
 
     // This is to fix 2 bugs: 1. blank video for encrypted video streams on iOS 16
     // (https://github.com/flutter/flutter/issues/111457) and 2. swapped width and height for some
