@@ -50,111 +50,45 @@
 - (instancetype)initWithURL:(NSURL *)url
                frameUpdater:(FVPFrameUpdater *)frameUpdater
                 displayLink:(FVPDisplayLink *)displayLink
-                httpHeaders:(NSDictionary<NSString *, NSString *> *)headers
+               httpHeaders:(NSDictionary<NSString*,NSString*>*)headers
                   avFactory:(id<FVPAVFactory>)avFactory
-               viewProvider:(NSObject<FVPViewProvider> *)viewProvider
+               viewProvider:(NSObject<FVPViewProvider>*)viewProvider
                  onDisposed:(void (^)(int64_t))onDisposed {
-  // 1️⃣ Grab your chunk header if it exists
-  NSString *firstChunkPath = headers[@"firstChunkFilePath"];
 
-  // 2️⃣ If no header, but url has no scheme (i.e. it's a raw file path), treat it as local
-  if (!firstChunkPath && (!url.scheme || url.scheme.length == 0)) {
-    firstChunkPath = url.path;
+  // 1️⃣ detect local chunk
+  NSString *firstChunk = headers[@"firstChunkFilePath"];
+  NSURL    *localURL   = firstChunk ? [NSURL fileURLWithPath:firstChunk] : nil;
+
+  // 2️⃣ network asset
+  NSDictionary *opts   = headers.count
+                        ? @{ @"AVURLAssetHTTPHeaderFieldsKey": headers }
+                        : nil;
+  AVURLAsset   *netAsset = [AVURLAsset URLAssetWithURL:url options:opts];
+  AVPlayerItem *netItem  = [AVPlayerItem playerItemWithAsset:netAsset];
+
+  AVPlayer *player;
+  if (localURL) {
+    // a) local item
+    AVURLAsset  *localAsset = [AVURLAsset URLAssetWithURL:localURL options:nil];
+    AVPlayerItem *localItem = [AVPlayerItem playerItemWithAsset:localAsset];
+
+    // b) queue up local→network
+    AVQueuePlayer *queue = [AVQueuePlayer queuePlayerWithItems:@[ localItem, netItem ]];
+    player = queue;
+  } else {
+    // no chunk: single‐asset player
+    player = [avFactory playerWithPlayerItem:netItem];
   }
 
-  // 3️⃣ If we have a firstChunkPath: build a two‐asset composition
-  if (firstChunkPath) {
-    // remove it from headers so AVURLAsset doesn’t choke
-    NSMutableDictionary *clean = [headers mutableCopy];
-    [clean removeObjectForKey:@"firstChunkFilePath"];
-
-    // local asset
-    NSURL      *localURL   = [NSURL fileURLWithPath:firstChunkPath];
-    AVURLAsset *localAsset = [AVURLAsset URLAssetWithURL:localURL options:nil];
-    CMTime      localDur   = localAsset.duration;
-
-    // network asset (if url.scheme is http/https)
-    NSDictionary *netOpts = clean.count
-      ? @{ @"AVURLAssetHTTPHeaderFieldsKey" : clean }
-      : nil;
-    AVURLAsset *netAsset = nil;
-    if (url.scheme && [url.scheme hasPrefix:@"http"]) {
-      netAsset = [AVURLAsset URLAssetWithURL:url options:netOpts];
-    }
-
-    // stitch
-    AVMutableComposition *comp = [AVMutableComposition composition];
-    // — video track
-    AVMutableCompositionTrack *vTrack =
-      [comp addMutableTrackWithMediaType:AVMediaTypeVideo
-                        preferredTrackID:kCMPersistentTrackID_Invalid];
-    // insert local
-    AVAssetTrack *v0 = [localAsset tracksWithMediaType:AVMediaTypeVideo].firstObject;
-    [vTrack insertTimeRange:CMTimeRangeMake(kCMTimeZero, localDur)
-                    ofTrack:v0
-                     atTime:kCMTimeZero
-                      error:nil];
-    // insert network remainder
-    if (netAsset) {
-      AVAssetTrack *v1 = [netAsset tracksWithMediaType:AVMediaTypeVideo].firstObject;
-      CMTimeRange netRange = CMTimeRangeMake(localDur,
-        CMTimeSubtract(netAsset.duration, localDur));
-      [vTrack insertTimeRange:netRange
-                      ofTrack:v1
-                       atTime:localDur
-                        error:nil];
-    }
-
-    // — audio track (optional)
-    AVMutableCompositionTrack *aTrack =
-      [comp addMutableTrackWithMediaType:AVMediaTypeAudio
-                        preferredTrackID:kCMPersistentTrackID_Invalid];
-    AVAssetTrack *a0 = [localAsset tracksWithMediaType:AVMediaTypeAudio].firstObject;
-    if (a0) {
-      [aTrack insertTimeRange:CMTimeRangeMake(kCMTimeZero, localDur)
-                      ofTrack:a0
-                       atTime:kCMTimeZero
-                        error:nil];
-    }
-    if (netAsset) {
-      AVAssetTrack *a1 = [netAsset tracksWithMediaType:AVMediaTypeAudio].firstObject;
-      if (a1) {
-        [aTrack insertTimeRange:CMTimeRangeMake(localDur,
-                            CMTimeSubtract(netAsset.duration, localDur))
-                        ofTrack:a1
-                         atTime:localDur
-                          error:nil];
-      }
-    }
-
-    // hand off the composed player item
-    AVPlayerItem *item = [AVPlayerItem playerItemWithAsset:comp];
-    return [self initWithPlayerItem:item
-                       frameUpdater:frameUpdater
-                        displayLink:displayLink
-                          avFactory:avFactory
-                       viewProvider:viewProvider
-                         onDisposed:onDisposed];
-  }
-
-  // 4️⃣ No chunking → fall back to single‐asset
-  //    also convert raw file paths into file‐URLs
-  if (!url.scheme || url.scheme.length == 0) {
-    url = [NSURL fileURLWithPath:url.path];
-  }
-  NSDictionary<NSString *, id> *opts = nil;
-  if (headers.count) {
-    opts = @{ @"AVURLAssetHTTPHeaderFieldsKey" : headers };
-  }
-  AVURLAsset *urlAsset  = [AVURLAsset URLAssetWithURL:url options:opts];
-  AVPlayerItem *item    = [AVPlayerItem playerItemWithAsset:urlAsset];
-  return [self initWithPlayerItem:item
+  // 3️⃣ Hand off to your existing initWithPlayerItem:…
+  return [self initWithPlayerItem:netItem
                      frameUpdater:frameUpdater
                       displayLink:displayLink
                         avFactory:avFactory
                      viewProvider:viewProvider
                        onDisposed:onDisposed];
 }
+
 
 
 - (instancetype)initWithPlayerItem:(AVPlayerItem *)item
