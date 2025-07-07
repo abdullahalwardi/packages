@@ -18,6 +18,7 @@ import io.flutter.view.TextureRegistry.SurfaceProducer;
 
 import androidx.media3.common.util.Util;
 import androidx.media3.exoplayer.DefaultLoadControl;
+import androidx.media3.exoplayer.LoadControl;
 import androidx.media3.exoplayer.upstream.DefaultAllocator;
 /**
  * A class responsible for managing video playback using {@link ExoPlayer}.
@@ -40,31 +41,33 @@ public abstract class VideoPlayer {
     ExoPlayer get();
   }
 
-public VideoPlayer(
-    @NonNull VideoPlayerCallbacks events,
-    @NonNull MediaItem mediaItem,
-    @NonNull VideoPlayerOptions options,
-    @Nullable SurfaceProducer surfaceProducer,
-    @NonNull Context context  // make sure you have a Context here
-) {
-  this.videoPlayerEvents = events;
-  this.surfaceProducer = surfaceProducer;
-
-  // build ExoPlayer with custom LoadControl
-  DefaultLoadControl loadControl = new DefaultLoadControl.Builder()
-      .setAllocator(new DefaultAllocator(true, C.DEFAULT_BUFFER_SEGMENT_SIZE))
-      .setBufferDurationsMs(10_000, 10_000, 500, 2_000)
-      .build();
-  exoPlayer = new ExoPlayer.Builder(context)
-      .setLoadControl(loadControl)
-      .build();
-
-  exoPlayer.setMediaItem(mediaItem);
-  exoPlayer.prepare();
-  exoPlayer.addListener(createExoPlayerEventListener(exoPlayer, surfaceProducer));
-  setAudioAttributes(exoPlayer, options.mixWithOthers);
-}
-
+  public VideoPlayer(
+      @NonNull VideoPlayerCallbacks events,
+      @NonNull MediaItem mediaItem,
+      @NonNull VideoPlayerOptions options,
+      @Nullable SurfaceProducer surfaceProducer,
+      @NonNull ExoPlayerProvider exoPlayerProvider) {
+    this.videoPlayerEvents = events;
+    this.surfaceProducer = surfaceProducer;
+    exoPlayer = exoPlayerProvider.get();
+    // set up custom LoadControl
+    LoadControl loadControl =
+        new LoadControl.Builder()
+            .setAllocator(new DefaultAllocator(true, C.DEFAULT_BUFFER_SEGMENT_SIZE))
+            .setBufferDurationsMs(
+                10_000,
+                10_000,
+                500,
+                2_000)
+            .setTargetBufferBytes(options.targetBufferBytes)
+            .setPrioritizeTimeOverSizeThresholds(options.prioritizeTimeOverSizeThresholds)
+            .build();
+    exoPlayer.setLoadControl(loadControl);
+    exoPlayer.setMediaItem(mediaItem);
+    exoPlayer.prepare();
+    exoPlayer.addListener(createExoPlayerEventListener(exoPlayer, surfaceProducer));
+    setAudioAttributes(exoPlayer, options.mixWithOthers);
+  }
 
   @NonNull
   protected abstract ExoPlayerEventListener createExoPlayerEventListener(
