@@ -17,6 +17,11 @@ import io.flutter.plugins.videoplayer.VideoPlayerCallbacks;
 import io.flutter.plugins.videoplayer.VideoPlayerOptions;
 import io.flutter.view.TextureRegistry.SurfaceProducer;
 
+import androidx.media3.common.C;
+import androidx.media3.common.util.Util;
+import androidx.media3.exoplayer.DefaultLoadControl;
+import androidx.media3.exoplayer.upstream.DefaultAllocator;
+
 /**
  * A subclass of {@link VideoPlayer} that adds functionality related to platform view as a way of
  * displaying the video in the app.
@@ -24,11 +29,12 @@ import io.flutter.view.TextureRegistry.SurfaceProducer;
 public class PlatformViewVideoPlayer extends VideoPlayer {
   @VisibleForTesting
   public PlatformViewVideoPlayer(
+    @NonNull Context context,
       @NonNull VideoPlayerCallbacks events,
       @NonNull MediaItem mediaItem,
       @NonNull VideoPlayerOptions options,
       @NonNull ExoPlayerProvider exoPlayerProvider) {
-    super(events, mediaItem, options, /* surfaceProducer */ null, exoPlayerProvider);
+    super(context, events, mediaItem, options, /* surfaceProducer */ null, exoPlayerProvider);
   }
 
   /**
@@ -47,13 +53,29 @@ public class PlatformViewVideoPlayer extends VideoPlayer {
       @NonNull VideoAsset asset,
       @NonNull VideoPlayerOptions options) {
     return new PlatformViewVideoPlayer(
+        context,
         events,
         asset.getMediaItem(),
         options,
         () -> {
+          // 1) build your custom LoadControl
+          DefaultLoadControl loadControl =
+              new DefaultLoadControl.Builder()
+                  .setAllocator(new DefaultAllocator(true, C.DEFAULT_BUFFER_SEGMENT_SIZE))
+                  .setBufferDurationsMs(
+                      /* minBufferMs= */ 10_000,
+                      /* maxBufferMs= */ 10_000,
+                      /* bufferForPlaybackMs= */ 500,
+                      /* bufferForPlaybackAfterRebufferMs= */ 2_000)
+                  .build();
+
+          // 2) inject it into the ExoPlayer.Builder
           ExoPlayer.Builder builder =
               new ExoPlayer.Builder(context)
+                  .setLoadControl(loadControl)
                   .setMediaSourceFactory(asset.getMediaSourceFactory(context));
+
+          // 3) build the player
           return builder.build();
         });
   }
