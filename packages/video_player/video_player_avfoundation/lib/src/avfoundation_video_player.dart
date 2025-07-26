@@ -195,9 +195,7 @@ class AVFoundationVideoPlayer extends VideoPlayerPlatform {
       VideoPlayerTextureViewState(:final int textureId) =>
         Texture(textureId: textureId),
       VideoPlayerPlatformViewState() => _buildPlatformView(playerId),
-      null => throw Exception(
-          'Could not find corresponding view type for playerId: $playerId',
-        ),
+      null => Container()
     };
   }
 
