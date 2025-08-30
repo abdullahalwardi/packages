@@ -56,10 +56,10 @@ public abstract class VideoPlayer {
         new DefaultLoadControl.Builder()
             .setAllocator(new DefaultAllocator(true, C.DEFAULT_BUFFER_SEGMENT_SIZE))
             .setBufferDurationsMs(
-                15_000,  // minBufferMs
+                10_000,  // minBufferMs
                 60_000, // maxBufferMs
                 500, // bufferForPlaybackMs
-                500 // bufferForPlaybackAfterRebufferMs
+                2_000 // bufferForPlaybackAfterRebufferMs
                 )
             // .setTargetBufferBytes(options.targetBufferBytes)
             // .setPrioritizeTimeOverSizeThresholds(options.prioritizeTimeOverSizeThresholds)
@@ -67,9 +67,10 @@ public abstract class VideoPlayer {
     exoPlayer = new ExoPlayer.Builder(context)
     .setLoadControl(loadControl)
     .build();
+    exoPlayer.addListener(createExoPlayerEventListener(exoPlayer, surfaceProducer));
     exoPlayer.setMediaItem(mediaItem);
     exoPlayer.prepare();
-    exoPlayer.addListener(createExoPlayerEventListener(exoPlayer, surfaceProducer));
+    
     setAudioAttributes(exoPlayer, options.mixWithOthers);
   }
 
