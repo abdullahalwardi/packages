@@ -67,7 +67,7 @@ void main() {
 
     final int mapId = await mapIdCompleter.future;
     final GoogleMapsInspectorPlatform inspector =
-        GoogleMapsInspectorPlatform.instance!;
+        GoogleMapsInspectorPlatform.instance;
     bool compassEnabled = await inspector.isCompassEnabled(mapId: mapId);
     expect(compassEnabled, false);
 
@@ -107,7 +107,7 @@ void main() {
 
     final int mapId = await mapIdCompleter.future;
     final GoogleMapsInspectorPlatform inspector =
-        GoogleMapsInspectorPlatform.instance!;
+        GoogleMapsInspectorPlatform.instance;
     final bool mapToolbarEnabled = await inspector.isMapToolbarEnabled(
       mapId: mapId,
     );
@@ -139,7 +139,7 @@ void main() {
     final ExampleGoogleMapController controller =
         await controllerCompleter.future;
     final GoogleMapsInspectorPlatform inspector =
-        GoogleMapsInspectorPlatform.instance!;
+        GoogleMapsInspectorPlatform.instance;
 
     MinMaxZoomPreference zoomLevel = await inspector.getMinMaxZoomLevels(
       mapId: controller.mapId,
@@ -184,7 +184,7 @@ void main() {
 
     final int mapId = await mapIdCompleter.future;
     final GoogleMapsInspectorPlatform inspector =
-        GoogleMapsInspectorPlatform.instance!;
+        GoogleMapsInspectorPlatform.instance;
     bool zoomGesturesEnabled = await inspector.areZoomGesturesEnabled(
       mapId: mapId,
     );
@@ -226,7 +226,7 @@ void main() {
 
     final int mapId = await mapIdCompleter.future;
     final GoogleMapsInspectorPlatform inspector =
-        GoogleMapsInspectorPlatform.instance!;
+        GoogleMapsInspectorPlatform.instance;
     final bool zoomControlsEnabled = await inspector.areZoomControlsEnabled(
       mapId: mapId,
     );
@@ -255,7 +255,7 @@ void main() {
 
     final int mapId = await mapIdCompleter.future;
     final GoogleMapsInspectorPlatform inspector =
-        GoogleMapsInspectorPlatform.instance!;
+        GoogleMapsInspectorPlatform.instance;
     bool rotateGesturesEnabled = await inspector.areRotateGesturesEnabled(
       mapId: mapId,
     );
@@ -300,7 +300,7 @@ void main() {
 
     final int mapId = await mapIdCompleter.future;
     final GoogleMapsInspectorPlatform inspector =
-        GoogleMapsInspectorPlatform.instance!;
+        GoogleMapsInspectorPlatform.instance;
     bool tiltGesturesEnabled = await inspector.areTiltGesturesEnabled(
       mapId: mapId,
     );
@@ -343,7 +343,7 @@ void main() {
 
     final int mapId = await mapIdCompleter.future;
     final GoogleMapsInspectorPlatform inspector =
-        GoogleMapsInspectorPlatform.instance!;
+        GoogleMapsInspectorPlatform.instance;
     bool scrollGesturesEnabled = await inspector.areScrollGesturesEnabled(
       mapId: mapId,
     );
@@ -512,7 +512,7 @@ void main() {
 
     final int mapId = await mapIdCompleter.future;
     final GoogleMapsInspectorPlatform inspector =
-        GoogleMapsInspectorPlatform.instance!;
+        GoogleMapsInspectorPlatform.instance;
     bool isTrafficEnabled = await inspector.isTrafficEnabled(mapId: mapId);
     expect(isTrafficEnabled, true);
 
@@ -552,7 +552,7 @@ void main() {
 
     final int mapId = await mapIdCompleter.future;
     final GoogleMapsInspectorPlatform inspector =
-        GoogleMapsInspectorPlatform.instance!;
+        GoogleMapsInspectorPlatform.instance;
     final bool isBuildingsEnabled = await inspector.areBuildingsEnabled(
       mapId: mapId,
     );
@@ -578,7 +578,7 @@ void main() {
 
     final int mapId = await mapIdCompleter.future;
     final GoogleMapsInspectorPlatform inspector =
-        GoogleMapsInspectorPlatform.instance!;
+        GoogleMapsInspectorPlatform.instance;
     bool myLocationButtonEnabled = await inspector.isMyLocationButtonEnabled(
       mapId: mapId,
     );
@@ -626,7 +626,7 @@ void main() {
 
     final int mapId = await mapIdCompleter.future;
     final GoogleMapsInspectorPlatform inspector =
-        GoogleMapsInspectorPlatform.instance!;
+        GoogleMapsInspectorPlatform.instance;
     final bool myLocationButtonEnabled = await inspector
         .isMyLocationButtonEnabled(mapId: mapId);
     expect(myLocationButtonEnabled, false);
@@ -653,7 +653,7 @@ void main() {
 
     final int mapId = await mapIdCompleter.future;
     final GoogleMapsInspectorPlatform inspector =
-        GoogleMapsInspectorPlatform.instance!;
+        GoogleMapsInspectorPlatform.instance;
     final bool myLocationButtonEnabled = await inspector
         .isMyLocationButtonEnabled(mapId: mapId);
     expect(myLocationButtonEnabled, true);
@@ -1073,16 +1073,16 @@ void main() {
 
     final int mapId = await mapIdCompleter.future;
     final GoogleMapsInspectorPlatform inspector =
-        GoogleMapsInspectorPlatform.instance!;
+        GoogleMapsInspectorPlatform.instance;
 
-    final TileOverlay tileOverlayInfo1 = (await inspector.getTileOverlayInfo(
+    final TileOverlay tileOverlayInfo1 = await inspector.getTileOverlayInfo(
       tileOverlay1.mapsId,
       mapId: mapId,
-    ))!;
-    final TileOverlay tileOverlayInfo2 = (await inspector.getTileOverlayInfo(
+    );
+    final TileOverlay tileOverlayInfo2 = await inspector.getTileOverlayInfo(
       tileOverlay2.mapsId,
       mapId: mapId,
-    ))!;
+    );
 
     expect(tileOverlayInfo1.visible, isTrue);
     expect(tileOverlayInfo1.fadeIn, isTrue);
@@ -1133,7 +1133,7 @@ void main() {
 
     final int mapId = await mapIdCompleter.future;
     final GoogleMapsInspectorPlatform inspector =
-        GoogleMapsInspectorPlatform.instance!;
+        GoogleMapsInspectorPlatform.instance;
 
     final tileOverlay1New = TileOverlay(
       tileOverlayId: const TileOverlayId('tile_overlay_1'),
@@ -1160,10 +1160,10 @@ void main() {
 
     await tester.pumpAndSettle(const Duration(seconds: 3));
 
-    final TileOverlay tileOverlayInfo1 = (await inspector.getTileOverlayInfo(
+    final TileOverlay tileOverlayInfo1 = await inspector.getTileOverlayInfo(
       tileOverlay1.mapsId,
       mapId: mapId,
-    ))!;
+    );
     final TileOverlay? tileOverlayInfo2 = await inspector.getTileOverlayInfo(
       tileOverlay2.mapsId,
       mapId: mapId,
@@ -1206,7 +1206,7 @@ void main() {
 
     final int mapId = await mapIdCompleter.future;
     final GoogleMapsInspectorPlatform inspector =
-        GoogleMapsInspectorPlatform.instance!;
+        GoogleMapsInspectorPlatform.instance;
 
     await tester.pumpWidget(
       Directionality(
@@ -1261,7 +1261,7 @@ void main() {
     final controllerCompleter = Completer<ExampleGoogleMapController>();
 
     final GoogleMapsInspectorPlatform inspector =
-        GoogleMapsInspectorPlatform.instance!;
+        GoogleMapsInspectorPlatform.instance;
 
     await tester.pumpWidget(
       Directionality(
@@ -1301,7 +1301,7 @@ void main() {
         )
         .key;
     markers[markerIdToMove] = _copyMarkerWithClusterManagerId(
-      markers[markerIdToMove]!,
+      markers[markerIdToMove],
       clusterManagers.last.clusterManagerId,
     );
 
@@ -1397,7 +1397,7 @@ void main() {
     final controllerCompleter = Completer<ExampleGoogleMapController>();
 
     final GoogleMapsInspectorPlatform inspector =
-        GoogleMapsInspectorPlatform.instance!;
+        GoogleMapsInspectorPlatform.instance;
 
     await tester.pumpWidget(
       Directionality(
@@ -1755,18 +1755,18 @@ void main() {
 
       final int mapId = await mapIdCompleter.future;
       final GoogleMapsInspectorPlatform inspector =
-          GoogleMapsInspectorPlatform.instance!;
+          GoogleMapsInspectorPlatform.instance;
 
       if (inspector.supportsGettingGroundOverlayInfo()) {
-        final GroundOverlay groundOverlayBoundsInfo1 = (await inspector
-            .getGroundOverlayInfo(groundOverlayBounds1.mapsId, mapId: mapId))!;
-        final GroundOverlay groundOverlayBoundsInfo2 = (await inspector
-            .getGroundOverlayInfo(groundOverlayBounds2.mapsId, mapId: mapId))!;
-        final GroundOverlay groundOverlayPositionInfo1 = (await inspector
+        final GroundOverlay groundOverlayBoundsInfo1 = await inspector
+            .getGroundOverlayInfo(groundOverlayBounds1.mapsId, mapId: mapId);
+        final GroundOverlay groundOverlayBoundsInfo2 = await inspector
+            .getGroundOverlayInfo(groundOverlayBounds2.mapsId, mapId: mapId);
+        final GroundOverlay groundOverlayPositionInfo1 = await inspector
             .getGroundOverlayInfo(
               groundOverlayPosition1.mapsId,
               mapId: mapId,
-            ))!;
+            );
 
         expectGroundOverlayEquals(
           groundOverlayBounds1,
@@ -1808,7 +1808,7 @@ void main() {
 
       final int mapId = await mapIdCompleter.future;
       final GoogleMapsInspectorPlatform inspector =
-          GoogleMapsInspectorPlatform.instance!;
+          GoogleMapsInspectorPlatform.instance;
 
       final GroundOverlay groundOverlayBounds1New = groundOverlayBounds1
           .copyWith(
@@ -1848,13 +1848,13 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 3));
 
       if (inspector.supportsGettingGroundOverlayInfo()) {
-        final GroundOverlay groundOverlayBounds1Info = (await inspector
-            .getGroundOverlayInfo(groundOverlayBounds1.mapsId, mapId: mapId))!;
-        final GroundOverlay groundOverlayPosition1Info = (await inspector
+        final GroundOverlay groundOverlayBounds1Info = await inspector
+            .getGroundOverlayInfo(groundOverlayBounds1.mapsId, mapId: mapId);
+        final GroundOverlay groundOverlayPosition1Info = await inspector
             .getGroundOverlayInfo(
               groundOverlayPosition1.mapsId,
               mapId: mapId,
-            ))!;
+            );
 
         expectGroundOverlayEquals(
           groundOverlayBounds1New,
@@ -1892,7 +1892,7 @@ void main() {
 
       final int mapId = await mapIdCompleter.future;
       final GoogleMapsInspectorPlatform inspector =
-          GoogleMapsInspectorPlatform.instance!;
+          GoogleMapsInspectorPlatform.instance;
 
       await tester.pumpWidget(
         Directionality(
@@ -1927,7 +1927,7 @@ void main() {
       final Key key = GlobalKey();
       final controllerCompleter = Completer<ExampleGoogleMapController>();
       final GoogleMapsInspectorPlatform inspector =
-          GoogleMapsInspectorPlatform.instance!;
+          GoogleMapsInspectorPlatform.instance;
 
       /// Completer to track when the camera has come to rest.
       Completer<void>? cameraIdleCompleter;
@@ -1965,7 +1965,7 @@ void main() {
       cameraIdleCompleter = Completer<void>();
 
       final CameraUpdate cameraUpdate = _getCameraUpdateForType(
-        _cameraUpdateTypeVariants.currentValue!,
+        _cameraUpdateTypeVariants.currentValue,
       );
       await controller.animateCamera(cameraUpdate);
 
@@ -1976,7 +1976,7 @@ void main() {
           .getCameraPosition(mapId: controller.mapId);
 
       await _checkCameraUpdateByType(
-        _cameraUpdateTypeVariants.currentValue!,
+        _cameraUpdateTypeVariants.currentValue,
         beforeFinishedPosition,
         null,
         controller,
@@ -1991,7 +1991,7 @@ void main() {
       final CameraPosition afterFinishedPosition = await inspector
           .getCameraPosition(mapId: controller.mapId);
       await _checkCameraUpdateByType(
-        _cameraUpdateTypeVariants.currentValue!,
+        _cameraUpdateTypeVariants.currentValue,
         afterFinishedPosition,
         beforeFinishedPosition,
         controller,
@@ -2020,7 +2020,7 @@ void main() {
       final Key key = GlobalKey();
       final controllerCompleter = Completer<ExampleGoogleMapController>();
       final GoogleMapsInspectorPlatform inspector =
-          GoogleMapsInspectorPlatform.instance!;
+          GoogleMapsInspectorPlatform.instance;
 
       /// Completer to track when the camera has come to rest.
       Completer<void>? cameraIdleCompleter;
@@ -2077,7 +2077,7 @@ void main() {
 
       // First phase with shorter animation duration.
       final CameraUpdate cameraUpdateShort = _getCameraUpdateForType(
-        _cameraUpdateTypeVariants.currentValue!,
+        _cameraUpdateTypeVariants.currentValue,
       );
       await controller.animateCamera(
         cameraUpdateShort,
@@ -2111,7 +2111,7 @@ void main() {
 
       // Second phase with longer animation duration.
       final CameraUpdate cameraUpdateLong = _getCameraUpdateForType(
-        _cameraUpdateTypeVariants.currentValue!,
+        _cameraUpdateTypeVariants.currentValue,
       );
       await controller.animateCamera(
         cameraUpdateLong,
@@ -2125,7 +2125,7 @@ void main() {
           .getCameraPosition(mapId: controller.mapId);
 
       await _checkCameraUpdateByType(
-        _cameraUpdateTypeVariants.currentValue!,
+        _cameraUpdateTypeVariants.currentValue,
         beforeFinishedPosition,
         null,
         controller,
@@ -2147,7 +2147,7 @@ void main() {
       final CameraPosition afterFinishedPosition = await inspector
           .getCameraPosition(mapId: controller.mapId);
       await _checkCameraUpdateByType(
-        _cameraUpdateTypeVariants.currentValue!,
+        _cameraUpdateTypeVariants.currentValue,
         afterFinishedPosition,
         beforeFinishedPosition,
         controller,

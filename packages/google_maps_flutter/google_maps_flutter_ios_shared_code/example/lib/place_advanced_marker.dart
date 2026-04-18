@@ -74,7 +74,7 @@ class _PlaceAdvancedMarkerBodyState extends State<_PlaceAdvancedMarkerBody> {
         final MarkerId? previousMarkerId = selectedMarker;
         if (previousMarkerId != null && markers.containsKey(previousMarkerId)) {
           final AdvancedMarker resetOld = copyWithSelectedState(
-            markers[previousMarkerId]!,
+            markers[previousMarkerId],
             false,
           );
           markers[previousMarkerId] = resetOld;
@@ -175,7 +175,7 @@ class _PlaceAdvancedMarkerBodyState extends State<_PlaceAdvancedMarkerBody> {
   }
 
   void _changePosition(MarkerId markerId) {
-    final AdvancedMarker marker = markers[markerId]!;
+    final AdvancedMarker marker = markers[markerId];
     final LatLng current = marker.position;
     final offset = Offset(
       center.latitude - current.latitude,
@@ -192,7 +192,7 @@ class _PlaceAdvancedMarkerBodyState extends State<_PlaceAdvancedMarkerBody> {
   }
 
   void _changeAnchor(MarkerId markerId) {
-    final AdvancedMarker marker = markers[markerId]!;
+    final AdvancedMarker marker = markers[markerId];
     final Offset currentAnchor = marker.anchor;
     final newAnchor = Offset(1.0 - currentAnchor.dy, currentAnchor.dx);
     setState(() {
@@ -201,7 +201,7 @@ class _PlaceAdvancedMarkerBodyState extends State<_PlaceAdvancedMarkerBody> {
   }
 
   Future<void> _changeInfoAnchor(MarkerId markerId) async {
-    final AdvancedMarker marker = markers[markerId]!;
+    final AdvancedMarker marker = markers[markerId];
     final Offset currentAnchor = marker.infoWindow.anchor;
     final newAnchor = Offset(1.0 - currentAnchor.dy, currentAnchor.dx);
     setState(() {
@@ -212,21 +212,21 @@ class _PlaceAdvancedMarkerBodyState extends State<_PlaceAdvancedMarkerBody> {
   }
 
   Future<void> _toggleDraggable(MarkerId markerId) async {
-    final AdvancedMarker marker = markers[markerId]!;
+    final AdvancedMarker marker = markers[markerId];
     setState(() {
       markers[markerId] = marker.copyWith(draggableParam: !marker.draggable);
     });
   }
 
   Future<void> _toggleFlat(MarkerId markerId) async {
-    final AdvancedMarker marker = markers[markerId]!;
+    final AdvancedMarker marker = markers[markerId];
     setState(() {
       markers[markerId] = marker.copyWith(flatParam: !marker.flat);
     });
   }
 
   Future<void> _changeInfo(MarkerId markerId) async {
-    final AdvancedMarker marker = markers[markerId]!;
+    final AdvancedMarker marker = markers[markerId];
     final newSnippet = '${marker.infoWindow.snippet!}*';
     setState(() {
       markers[markerId] = marker.copyWith(
@@ -236,7 +236,7 @@ class _PlaceAdvancedMarkerBodyState extends State<_PlaceAdvancedMarkerBody> {
   }
 
   Future<void> _changeAlpha(MarkerId markerId) async {
-    final AdvancedMarker marker = markers[markerId]!;
+    final AdvancedMarker marker = markers[markerId];
     final double current = marker.alpha;
     setState(() {
       markers[markerId] = marker.copyWith(
@@ -246,7 +246,7 @@ class _PlaceAdvancedMarkerBodyState extends State<_PlaceAdvancedMarkerBody> {
   }
 
   Future<void> _changeRotation(MarkerId markerId) async {
-    final AdvancedMarker marker = markers[markerId]!;
+    final AdvancedMarker marker = markers[markerId];
     final double current = marker.rotation;
     setState(() {
       markers[markerId] = marker.copyWith(
@@ -256,14 +256,14 @@ class _PlaceAdvancedMarkerBodyState extends State<_PlaceAdvancedMarkerBody> {
   }
 
   Future<void> _toggleVisible(MarkerId markerId) async {
-    final AdvancedMarker marker = markers[markerId]!;
+    final AdvancedMarker marker = markers[markerId];
     setState(() {
       markers[markerId] = marker.copyWith(visibleParam: !marker.visible);
     });
   }
 
   Future<void> _changeZIndex(MarkerId markerId) async {
-    final AdvancedMarker marker = markers[markerId]!;
+    final AdvancedMarker marker = markers[markerId];
     final double current = marker.zIndex;
     setState(() {
       markers[markerId] = marker.copyWith(
@@ -273,7 +273,7 @@ class _PlaceAdvancedMarkerBodyState extends State<_PlaceAdvancedMarkerBody> {
   }
 
   void _setMarkerIcon(MarkerId markerId, BitmapDescriptor assetIcon) {
-    final AdvancedMarker marker = markers[markerId]!;
+    final AdvancedMarker marker = markers[markerId];
     setState(() {
       markers[markerId] = marker.copyWith(iconParam: assetIcon);
     });

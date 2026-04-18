@@ -106,21 +106,21 @@ class PlacePolygonBodyState extends State<PlacePolygonBody> {
   }
 
   void _toggleGeodesic(PolygonId polygonId) {
-    final Polygon polygon = polygons[polygonId]!;
+    final Polygon polygon = polygons[polygonId];
     setState(() {
       polygons[polygonId] = polygon.copyWith(geodesicParam: !polygon.geodesic);
     });
   }
 
   void _toggleVisible(PolygonId polygonId) {
-    final Polygon polygon = polygons[polygonId]!;
+    final Polygon polygon = polygons[polygonId];
     setState(() {
       polygons[polygonId] = polygon.copyWith(visibleParam: !polygon.visible);
     });
   }
 
   void _changeStrokeColor(PolygonId polygonId) {
-    final Polygon polygon = polygons[polygonId]!;
+    final Polygon polygon = polygons[polygonId];
     setState(() {
       polygons[polygonId] = polygon.copyWith(
         strokeColorParam: colors[++strokeColorsIndex % colors.length],
@@ -129,7 +129,7 @@ class PlacePolygonBodyState extends State<PlacePolygonBody> {
   }
 
   void _changeFillColor(PolygonId polygonId) {
-    final Polygon polygon = polygons[polygonId]!;
+    final Polygon polygon = polygons[polygonId];
     setState(() {
       polygons[polygonId] = polygon.copyWith(
         fillColorParam: colors[++fillColorsIndex % colors.length],
@@ -138,7 +138,7 @@ class PlacePolygonBodyState extends State<PlacePolygonBody> {
   }
 
   void _changeWidth(PolygonId polygonId) {
-    final Polygon polygon = polygons[polygonId]!;
+    final Polygon polygon = polygons[polygonId];
     setState(() {
       polygons[polygonId] = polygon.copyWith(
         strokeWidthParam: widths[++widthsIndex % widths.length],
@@ -147,7 +147,7 @@ class PlacePolygonBodyState extends State<PlacePolygonBody> {
   }
 
   void _addHoles(PolygonId polygonId) {
-    final Polygon polygon = polygons[polygonId]!;
+    final Polygon polygon = polygons[polygonId];
     setState(() {
       polygons[polygonId] = polygon.copyWith(
         holesParam: _createHoles(polygonId),
@@ -156,7 +156,7 @@ class PlacePolygonBodyState extends State<PlacePolygonBody> {
   }
 
   void _removeHoles(PolygonId polygonId) {
-    final Polygon polygon = polygons[polygonId]!;
+    final Polygon polygon = polygons[polygonId];
     setState(() {
       polygons[polygonId] = polygon.copyWith(holesParam: <List<LatLng>>[]);
     });

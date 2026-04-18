@@ -131,7 +131,7 @@ class PlacePolylineBodyState extends State<PlacePolylineBody> {
   }
 
   void _toggleGeodesic(PolylineId polylineId) {
-    final Polyline polyline = polylines[polylineId]!;
+    final Polyline polyline = polylines[polylineId];
     setState(() {
       polylines[polylineId] = polyline.copyWith(
         geodesicParam: !polyline.geodesic,
@@ -140,7 +140,7 @@ class PlacePolylineBodyState extends State<PlacePolylineBody> {
   }
 
   void _toggleVisible(PolylineId polylineId) {
-    final Polyline polyline = polylines[polylineId]!;
+    final Polyline polyline = polylines[polylineId];
     setState(() {
       polylines[polylineId] = polyline.copyWith(
         visibleParam: !polyline.visible,
@@ -149,7 +149,7 @@ class PlacePolylineBodyState extends State<PlacePolylineBody> {
   }
 
   void _changeColor(PolylineId polylineId) {
-    final Polyline polyline = polylines[polylineId]!;
+    final Polyline polyline = polylines[polylineId];
     setState(() {
       polylines[polylineId] = polyline.copyWith(
         colorParam: colors[++colorsIndex % colors.length],
@@ -158,7 +158,7 @@ class PlacePolylineBodyState extends State<PlacePolylineBody> {
   }
 
   void _changeWidth(PolylineId polylineId) {
-    final Polyline polyline = polylines[polylineId]!;
+    final Polyline polyline = polylines[polylineId];
     setState(() {
       polylines[polylineId] = polyline.copyWith(
         widthParam: widths[++widthsIndex % widths.length],
@@ -167,7 +167,7 @@ class PlacePolylineBodyState extends State<PlacePolylineBody> {
   }
 
   void _changeJointType(PolylineId polylineId) {
-    final Polyline polyline = polylines[polylineId]!;
+    final Polyline polyline = polylines[polylineId];
     setState(() {
       polylines[polylineId] = polyline.copyWith(
         jointTypeParam: jointTypes[++jointTypesIndex % jointTypes.length],
@@ -176,7 +176,7 @@ class PlacePolylineBodyState extends State<PlacePolylineBody> {
   }
 
   void _changeEndCap(PolylineId polylineId) {
-    final Polyline polyline = polylines[polylineId]!;
+    final Polyline polyline = polylines[polylineId];
     setState(() {
       polylines[polylineId] = polyline.copyWith(
         endCapParam: endCaps[++endCapsIndex % endCaps.length],
@@ -185,7 +185,7 @@ class PlacePolylineBodyState extends State<PlacePolylineBody> {
   }
 
   void _changeStartCap(PolylineId polylineId) {
-    final Polyline polyline = polylines[polylineId]!;
+    final Polyline polyline = polylines[polylineId];
     setState(() {
       polylines[polylineId] = polyline.copyWith(
         startCapParam: startCaps[++startCapsIndex % startCaps.length],
@@ -194,7 +194,7 @@ class PlacePolylineBodyState extends State<PlacePolylineBody> {
   }
 
   void _changePattern(PolylineId polylineId) {
-    final Polyline polyline = polylines[polylineId]!;
+    final Polyline polyline = polylines[polylineId];
     setState(() {
       polylines[polylineId] = polyline.copyWith(
         patternsParam: patterns[++patternsIndex % patterns.length],

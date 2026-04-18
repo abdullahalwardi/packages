@@ -737,11 +737,11 @@ class GoogleMapsFlutterIOS extends GoogleMapsFlutterPlatform {
     return PlatformGroundOverlay(
       groundOverlayId: groundOverlay.groundOverlayId.value,
       anchor: groundOverlay.anchor != null
-          ? _platformPointFromOffset(groundOverlay.anchor!)
+          ? _platformPointFromOffset(groundOverlay.anchor)
           : null,
       image: platformBitmapFromBitmapDescriptor(groundOverlay.image),
       position: groundOverlay.position != null
-          ? _platformLatLngFromLatLng(groundOverlay.position!)
+          ? _platformLatLngFromLatLng(groundOverlay.position)
           : null,
       bounds: _platformLatLngBoundsFromLatLngBounds(groundOverlay.bounds),
       visible: groundOverlay.visible,
@@ -996,10 +996,10 @@ class GoogleMapsFlutterIOS extends GoogleMapsFlutterPlatform {
         );
       case final PinConfig pinConfig:
         final PlatformColor? backgroundColor = pinConfig.backgroundColor != null
-            ? _platformColorFromColor(pinConfig.backgroundColor!)
+            ? _platformColorFromColor(pinConfig.backgroundColor)
             : null;
         final PlatformColor? borderColor = pinConfig.borderColor != null
-            ? _platformColorFromColor(pinConfig.borderColor!)
+            ? _platformColorFromColor(pinConfig.borderColor)
             : null;
         switch (pinConfig.glyph) {
           case final CircleGlyph circleGlyph:
@@ -1017,7 +1017,7 @@ class GoogleMapsFlutterIOS extends GoogleMapsFlutterPlatform {
                 borderColor: borderColor,
                 glyphText: textGlyph.text,
                 glyphTextColor: textGlyph.textColor != null
-                    ? _platformColorFromColor(textGlyph.textColor!)
+                    ? _platformColorFromColor(textGlyph.textColor)
                     : null,
               ),
             );

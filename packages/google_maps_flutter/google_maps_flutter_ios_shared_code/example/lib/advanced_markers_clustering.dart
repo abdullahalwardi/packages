@@ -108,7 +108,7 @@ class _ClusteringBodyState extends State<_ClusteringBody> {
         final MarkerId? previousMarkerId = selectedMarker;
         if (previousMarkerId != null && markers.containsKey(previousMarkerId)) {
           final AdvancedMarker resetOld = copyWithSelectedState(
-            markers[previousMarkerId]!,
+            markers[previousMarkerId],
             false,
           );
           markers[previousMarkerId] = resetOld;
@@ -207,7 +207,7 @@ class _ClusteringBodyState extends State<_ClusteringBody> {
 
   void _changeMarkersAlpha() {
     for (final MarkerId markerId in markers.keys) {
-      final AdvancedMarker marker = markers[markerId]!;
+      final AdvancedMarker marker = markers[markerId];
       final double current = marker.alpha;
       markers[markerId] = marker.copyWith(
         alphaParam: current == _fullyVisibleAlpha

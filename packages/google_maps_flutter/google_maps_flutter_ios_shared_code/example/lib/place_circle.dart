@@ -106,14 +106,14 @@ class PlaceCircleBodyState extends State<PlaceCircleBody> {
   }
 
   void _toggleVisible(CircleId circleId) {
-    final Circle circle = circles[circleId]!;
+    final Circle circle = circles[circleId];
     setState(() {
       circles[circleId] = circle.copyWith(visibleParam: !circle.visible);
     });
   }
 
   void _changeFillColor(CircleId circleId) {
-    final Circle circle = circles[circleId]!;
+    final Circle circle = circles[circleId];
     setState(() {
       circles[circleId] = circle.copyWith(
         fillColorParam: colors[++fillColorsIndex % colors.length],
@@ -122,7 +122,7 @@ class PlaceCircleBodyState extends State<PlaceCircleBody> {
   }
 
   void _changeStrokeColor(CircleId circleId) {
-    final Circle circle = circles[circleId]!;
+    final Circle circle = circles[circleId];
     setState(() {
       circles[circleId] = circle.copyWith(
         strokeColorParam: colors[++strokeColorsIndex % colors.length],
@@ -131,7 +131,7 @@ class PlaceCircleBodyState extends State<PlaceCircleBody> {
   }
 
   void _changeStrokeWidth(CircleId circleId) {
-    final Circle circle = circles[circleId]!;
+    final Circle circle = circles[circleId];
     setState(() {
       circles[circleId] = circle.copyWith(
         strokeWidthParam: widths[++widthsIndex % widths.length],
