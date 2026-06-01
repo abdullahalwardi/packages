@@ -18,6 +18,7 @@ import androidx.media3.common.TrackGroup;
 import androidx.media3.common.TrackSelectionOverride;
 import androidx.media3.common.Tracks;
 import androidx.media3.common.util.UnstableApi;
+import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector;
 import io.flutter.view.TextureRegistry.SurfaceProducer;
@@ -87,7 +88,16 @@ public abstract class VideoPlayer implements VideoPlayerInstanceApi {
             // .setTargetBufferBytes(options.targetBufferBytes)
             // .setPrioritizeTimeOverSizeThresholds(options.prioritizeTimeOverSizeThresholds)
             .build();
-    exoPlayer = new ExoPlayer.Builder(context)
+    // Enable software-decoder fallback. Many budget / Chinese-market Android
+    // devices ship buggy hardware MediaCodec implementations that fail to
+    // initialize for some streams (DecoderInitializationException). By default
+    // ExoPlayer surfaces that as a fatal error and the video never plays.
+    // setEnableDecoderFallback(true) makes it retry the next (typically
+    // software) decoder instead, so playback succeeds on those devices.
+    DefaultRenderersFactory renderersFactory =
+        new DefaultRenderersFactory(context).setEnableDecoderFallback(true);
+
+    exoPlayer = new ExoPlayer.Builder(context, renderersFactory)
     .setLoadControl(loadControl)
     .build();
     // Try to get the track selector from the ExoPlayer if it was built with one
