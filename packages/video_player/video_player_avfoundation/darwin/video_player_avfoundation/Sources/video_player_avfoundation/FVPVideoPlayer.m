@@ -5,7 +5,6 @@
 #import "./include/video_player_avfoundation/FVPVideoPlayer.h"
 #import "./include/video_player_avfoundation/messages.g.h"
 #import "./include/video_player_avfoundation/FVPVideoPlayer_Internal.h"
-#import "./include/video_player_avfoundation/FVPVideoPlayer_Test.h"
 
 #import <GLKit/GLKit.h>
 
