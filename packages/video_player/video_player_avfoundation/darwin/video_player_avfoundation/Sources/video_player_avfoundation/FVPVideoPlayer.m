@@ -146,9 +146,9 @@ static NSDictionary<NSString *, NSValue *> *FVPGetPlayerItemObservations(void) {
   _player = [avFactory playerWithPlayerItem:item];
   _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
 
-  _player.automaticallyWaitsToMinimizeStalling = NO;         // reduce stall delays
-  _player.currentItem.preferredPeakBitRate = 600000;       // cap bitrate at 3 Mbps
-  _player.currentItem.preferredForwardBufferDuration = 0.5;  // fine-tune buffer depth
+  _player.automaticallyWaitsToMinimizeStalling = NO;         // disable automatic waiting to minimize stalling to reduce latency, see https://developer.apple.com/library/archive/qa/qa1772/_index.html
+  _player.currentItem.preferredPeakBitRate = 600000;       // limit bitrate to reduce stalls on weak connections 600000 means 600 kbps, which is a common bitrate for 480p video, and should be sufficient for the low-latency use cases that these buffering settings are intended for.
+  _player.currentItem.preferredForwardBufferDuration = 0.5;  // minimal prebuffer to reduce latency, see https://developer.apple.com/library/archive/qa/qa1772/_index.html
 
   // Configure output.
   NSDictionary *pixBuffAttributes = @{
